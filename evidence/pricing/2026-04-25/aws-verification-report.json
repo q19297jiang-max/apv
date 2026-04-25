@@ -1,0 +1,32 @@
+{
+  "provider": "aws",
+  "date": "2026-04-25",
+  "verified_by": "Infrastructure Architect",
+  "results": [
+    {
+      "item": "m6i.xlarge",
+      "status": "verified",
+      "api_price": "$0.208"
+    },
+    {
+      "item": "c6i.xlarge",
+      "status": "verified",
+      "api_price": "$0.195"
+    },
+    {
+      "item": "r6i.xlarge",
+      "status": "verified",
+      "api_price": "$0.268"
+    },
+    {
+      "item": "EKS",
+      "status": "verified",
+      "api_price": "$0.10"
+    },
+    {
+      "item": "ALB",
+      "status": "verified",
+      "api_price": "$0.0225"
+    }
+  ]
+}

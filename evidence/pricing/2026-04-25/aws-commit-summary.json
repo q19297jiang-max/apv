@@ -1,0 +1,35 @@
+{
+  "provider": "aws",
+  "commit_date": "2026-04-25",
+  "committed_by": "Infrastructure Architect",
+  "verification_report": "/Users/stevenjiang/workspace/mykb/wiki/apv/evidence/pricing/2026-04-25/aws-verification-report.json",
+  "pricing_file": "/Users/stevenjiang/workspace/mykb/wiki/apv/knowledge/pricing/aws.md",
+  "price_valid_until": "2026-05-25",
+  "verification_results": [
+    {
+      "item": "m6i.xlarge",
+      "status": "verified",
+      "api_price": "$0.208"
+    },
+    {
+      "item": "c6i.xlarge",
+      "status": "verified",
+      "api_price": "$0.195"
+    },
+    {
+      "item": "r6i.xlarge",
+      "status": "verified",
+      "api_price": "$0.268"
+    },
+    {
+      "item": "EKS",
+      "status": "verified",
+      "api_price": "$0.10"
+    },
+    {
+      "item": "ALB",
+      "status": "verified",
+      "api_price": "$0.0225"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "provider": "aws",
+  "display_name": "AWS",
+  "date": "2026-04-25",
+  "sections": {
+    "ec2": 9,
+    "ec2_savings_plans": 3,
+    "rds": 3,
+    "rds_single_az": 6,
+    "rds_multi_az": 3,
+    "rds_savings_plans": 6,
+    "elasticache": 5,
+    "elasticache_savings_plans": 5,
+    "alb": 3,
+    "nlb": 2,
+    "eks": 2,
+    "ebs": 3,
+    "s3": 4,
+    "direct_connect": 2,
+    "vpc_flow_logs": 1,
+    "kms": 2,
+    "shield": 1,
+    "detailed_component_specification_template": 0,
+    "sizing_guidelines": 0
+  },
+  "total_items": 60,
+  "catalog_file": "aws-component-catalog.md",
+  "calculator_url": "https://calculator.aws/",
+  "timestamp": "2026-04-25T22:54:55.433757"
+}
