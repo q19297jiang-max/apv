@@ -20,6 +20,7 @@ python -m pip install -r requirements-dev.txt
 - The runtime fixture check is stronger than documentation-only validation, but it still does not execute the real APV skill chain end-to-end.
 - `run_real_pilot_harness.py` is a repeatable real pilot harness. It runs the current source URL and pricing freshness validators against `tests/projects/bbc-bank--credit-card-issuing-2026-04-25/`.
 - The real pilot harness validates one repo-tracked sample project under the canonical runtime contract, but it is still not a full skill-execution orchestrator.
+- When a local external BBC project exists at `apv-projects/bbc-bank--credit-card-issuing-2026-04-25/`, the harness also compares selected output artifacts (`02-compliance.md`, `05-pricing.md`, `06-response.md`) against that project.
 - A future end-to-end layer should validate actual APV generation from source inputs through final outputs.
 - Test reports in this directory should describe their scope explicitly as real-pilot, contract-level, or script-level.
 
