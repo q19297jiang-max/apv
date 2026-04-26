@@ -18,6 +18,8 @@ sources:
 
 Successfully processed **BBC Bank Credit Card RFP** through the APV skill chain, validating the first two skills (rfp-brainstorm and rfp-compliance) with real-world data.
 
+As of 2026-04-26, APV also has a repeatable real pilot harness at `tests/run_real_pilot_harness.py`. That harness validates the canonical sample project at `apv-projects/bbc-bank--credit-card-issuing-2026-04-25/` using current project-level checks rather than manual skill execution.
+
 **RFP Source**: BBC Bank (Bangladesh)
 **Documents**: 2 Excel files (Questionnaire + Volume projections)
 **Skills Tested**: 2 of 7 skills
@@ -265,6 +267,19 @@ Due to session constraints, the following skills were not executed in this pilot
 - [ ] Generate final RFP response document
 
 **Recommendation**: Consider pilot **successfully demonstrated** for skills 1-2. Remaining skills validated in Phase 3.1/3.2 unit and integration testing.
+
+## Repeatable Harness Status
+
+**Harness Script**: `wiki/apv/tests/run_real_pilot_harness.py`
+**Target Project**: `apv-projects/bbc-bank--credit-card-issuing-2026-04-25/`
+
+### Current Harness Results
+
+- Pricing freshness: ✅ pass
+- Source URL validation: ⚠️ one remaining inaccessible official PDF URL
+- Invalid internal anchor links: ✅ eliminated by validator fix
+
+This harness should be treated as artifact-level real-project validation. It is stronger than fixture-only checks, but it still does not prove full APV orchestration.
 
 ---
 

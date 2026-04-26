@@ -127,6 +127,8 @@ def extract_urls_from_content(content: str) -> List[Tuple[str, int]]:
     # Markdown links: [text](url)
     for match in re.finditer(r'\[([^\]]+)\]\(([^)]+)\)', content):
         url = match.group(2)
+        if url.startswith('#'):
+            continue
         line_num = content[:match.start()].count('\n') + 1
         urls.append((url, line_num))
     # Plain URLs
@@ -192,13 +194,26 @@ def is_valid_url_format(url: str) -> bool:
 
 def check_url_accessible(url: str, timeout: int = 10) -> bool:
     """Check if URL is accessible via HTTP."""
-    try:
-        req = urllib.request.Request(url, method='HEAD')
+    def perform_request(method: str) -> bool:
+        req = urllib.request.Request(url, method=method)
         req.add_header('User-Agent', 'APV-Source-Validator/1.0')
         with urllib.request.urlopen(req, timeout=timeout) as response:
             return response.status < 400
-    except (urllib.error.URLError, urllib.error.HTTPError, Exception):
+
+    try:
+        return perform_request('HEAD')
+    except urllib.error.HTTPError as error:
+        if error.code in {403, 405, 501}:
+            try:
+                return perform_request('GET')
+            except (urllib.error.URLError, urllib.error.HTTPError, Exception):
+                return False
         return False
+    except (urllib.error.URLError, Exception):
+        try:
+            return perform_request('GET')
+        except (urllib.error.URLError, urllib.error.HTTPError, Exception):
+            return False
 
 
 def validate_markdown_file(file_path: Path) -> ValidationResult:

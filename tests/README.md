@@ -18,6 +18,8 @@ python -m pip install -r requirements-dev.txt
 - It does not execute a full APV RFP project from input through final response.
 - `test_runtime_project_fixture.py` is a runtime fixture check. It assembles a canonical `apv-projects/...` folder in a temporary workspace and validates both folder shape and key stage-output markers.
 - The runtime fixture check is stronger than documentation-only validation, but it still does not execute the real APV skill chain end-to-end.
+- `run_real_pilot_harness.py` is a repeatable real pilot harness. It runs the current source URL and pricing freshness validators against `apv-projects/bbc-bank--credit-card-issuing-2026-04-25/`.
+- The real pilot harness validates one known sample project under the canonical runtime contract, but it is still not a full skill-execution orchestrator.
 - A future end-to-end layer should validate actual APV generation from source inputs through final outputs.
 - Test reports in this directory should describe their scope explicitly as real-pilot, contract-level, or script-level.
 
@@ -29,5 +31,7 @@ python -m pip install -r requirements-dev.txt
 
 ```bash
 python -m pytest tests/test_runtime_project_fixture.py tests/test_doc_claims.py -q
+python -m pytest tests/test_validate_source_urls.py -q
 python tests/run_integration_tests.py --verbose
+python tests/run_real_pilot_harness.py
 ```
