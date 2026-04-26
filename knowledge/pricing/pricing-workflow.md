@@ -11,7 +11,7 @@ status: active
 
 ## Overview
 
-This workflow ensures accurate, up-to-date pricing for all cloud components (AWS, Azure, GCP) with minimal manual effort and maximum automation.
+This workflow describes the intended multi-provider pricing model for APV. In the current repository, AWS has the strongest documented and scripted support, while Azure and GCP should be treated as lighter-weight pricing snapshots rather than equally mature provider pipelines.
 
 ## Architecture
 
@@ -25,7 +25,7 @@ This workflow ensures accurate, up-to-date pricing for all cloud components (AWS
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  pricing-fetcher.py (GENERIC)                                │
+│  pricing-fetcher-generic.py                                  │
 │  - Dynamically parses any component catalog                  │
 │  - No hardcoded values                                      │
 │  - Works for AWS, Azure, GCP                                │
@@ -33,18 +33,18 @@ This workflow ensures accurate, up-to-date pricing for all cloud components (AWS
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  pricing-verify.py (VALIDATION)                             │
-│  - Detects discrepancies                                     │
-│  - Validates format compliance                               │
-│  - Opens calculator for verification                         │
+│  pricing-format-validator.py                                 │
+│  - Validates generated table format                          │
+│  - Checks required columns                                   │
+│  - Supports script-assisted workflow                         │
 └─────────────────────────────────────────────────────────────┘
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  pricing-commit.py (COMMIT)                                  │
-│  - Pre-commit validation                                    │
-│  - Updates [provider].md                                     │
-│  - Creates evidence records                                 │
+│  Manual evidence capture + file update                       │
+│  - Copy generated output into [provider].md                  │
+│  - Capture calculator evidence as needed                     │
+│  - No repo-local one-step commit helper exists               │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -60,7 +60,7 @@ wiki/apv/knowledge/pricing/
 └── [new-provider]-component-catalog.md
 ```
 
-### 2. Update pricing-fetcher.py
+### 2. Update pricing-fetcher-generic.py
 
 Add provider configuration:
 
@@ -114,9 +114,10 @@ The generic parser automatically:
 ### Week 4: Regenerate Pricing Files
 ```bash
 # For each provider with updates:
-python pricing-fetcher.py --provider [provider]
-python pricing-verify.py --provider [provider]
-python pricing-commit.py --provider [provider]
+python pricing-fetcher-generic.py --provider [provider]
+python pricing-format-validator.py --provider [provider]
+
+# Then update the provider markdown file and capture evidence manually.
 ```
 
 ## Savings Plans Verification
@@ -250,7 +251,7 @@ The pricing-fetcher-generic.py script automatically detects and parses Savings P
 
 **Solution**:
 - Update [provider]-component-catalog.md first
-- Re-run pricing-fetcher.py
+- Re-run pricing-fetcher-generic.py
 - Verify catalog has correct pricing
 
 ## Maintenance Schedule
@@ -259,7 +260,7 @@ The pricing-fetcher-generic.py script automatically detects and parses Savings P
 |------|-----------|-------|
 | Calculator verification | Quarterly | Infrastructure Architect |
 | Catalog updates | Quarterly | Infrastructure Architect |
-| Price validity check | Monthly | Automated |
+| Price validity check | Monthly | Script-assisted manual review |
 | Script validation | Quarterly | System Architect |
 
 ## Related

@@ -12,25 +12,30 @@ sources:
 
 **Standard Operating Procedures for APV System**
 
+This guide distinguishes between the current manually operated workflow and planned automation. Unless a command references an existing repo script under `tools/`, treat the procedure as operating guidance rather than a fully implemented automation path.
+
 ---
 
 ## Daily Operations
+
+## Current Manual Procedure
 
 ### Morning Checklist
 
 **Time**: 5 minutes
 
-1. **Check Automated Jobs**
+1. **Check Latest Verification Reports**
    ```bash
-   # Verify overnight verification ran
+   # Review the newest verification artifacts if they exist
    ls -lt ~/workspace/mykb/wiki/apv/evidence/url-checks/ | head -5
    ls -lt ~/workspace/mykb/wiki/apv/evidence/freshness-reports/ | head -5
    ```
 
-2. **Review Health Check**
+2. **Run Repo-Available Verification Scripts**
    ```bash
-   # Run health check
-   ~/workspace/mykb/wiki/apv/tools/health-check.sh
+   cd ~/workspace/mykb/wiki/apv
+   python tools/verify-source-urls.py --all
+   python tools/check-freshness.py --all
    ```
 
 3. **Check for Alerts**
@@ -39,9 +44,7 @@ sources:
 
 ---
 
-### Weekly Tasks
-
-**Day**: Monday
+### Recurring Review Tasks
 
 **Time**: 30 minutes
 
@@ -77,14 +80,20 @@ sources:
 - Estimate complexity (low/medium/high)
 - Assign to pre-sales engineer
 
-**Step 2: Process RFP** (60-90 minutes)
+**Step 2: Process RFP** (target-state timing: 60-90 minutes, current workflow may vary)
 ```bash
-# Copy RFP to working directory
-cp /path/to/rfp.pdf ~/workspace/apv/current/
+# Create canonical project folder
+CUSTOMER="bbc-bank"
+TITLE="credit-card-issuing"
+DATE=$(date +%Y-%m-%d)
+PROJECT="apv-projects/${CUSTOMER}--${TITLE}--${DATE}"
+mkdir -p "$PROJECT"/{input,outputs,evidence/{pricing,compliance,verification},approvals}
 
-# Run full APV chain
-cd ~/workspace/apv/current
-/apv rfp rfp.pdf
+# Copy RFP into the project folder
+cp /path/to/rfp.pdf "$PROJECT/input/"
+
+# Run APV from the project folder using the canonical runtime contract
+cd "$PROJECT"
 ```
 
 **Step 3: Review Outputs** (15 minutes)
@@ -163,9 +172,9 @@ cd ~/workspace/apv/current
 
 ### URL Freshness Monitoring
 
-**Automated**: Weekly via cron
+**Current**: Scripted checks run manually or on demand
 
-**Manual**: When alerted to stale URLs
+**Planned**: Scheduled checks via cron or an equivalent scheduler
 
 **Procedure for Stale Pricing URLs** (>30 days):
 1. Open calculator from source URL
@@ -237,7 +246,7 @@ cd ~/workspace/apv/current
 
 ### High Incident: Stale URLs in Production RFP
 
-**Detection**: Automated monitoring alerts
+**Detection**: Manual review of verification reports or a future scheduled alerting workflow
 
 **Response**:
 1. **Immediate** (5 min)
@@ -264,14 +273,15 @@ cd ~/workspace/apv/current
 
 ### Backup Schedule
 
-**Daily**:
-- Evidence files (automated via backup script)
+**Current manual practice**:
+- Archive evidence files using standard tar or copy commands
+- Keep periodic copies of the wiki and skills directories before major updates
 
-**Weekly**:
+**Recommended recurring backup cadence**:
 - Full wiki backup
 - Skills backup
 
-**Monthly**:
+**Optional archival cadence**:
 - Archive old evidence to cold storage
 
 ### Recovery Procedures
@@ -384,8 +394,9 @@ Track monthly:
 ### Quick Commands
 
 ```bash
-# Health check
-~/workspace/mykb/wiki/apv/tools/health-check.sh
+# Repo-available verification scripts
+cd ~/workspace/mykb/wiki/apv && python tools/verify-source-urls.py --all
+cd ~/workspace/mykb/wiki/apv && python tools/check-freshness.py --all
 
 # Verify all URLs
 cd ~/workspace/mykb/wiki/apv && python tools/verify-source-urls.py --all
@@ -399,8 +410,8 @@ cd ~/workspace && /apv rfp path/to/rfp.pdf
 # Review response
 /skill apv-reviewer --response rfp-response.md
 
-# Backup
-~/backup-apv.sh
+# Manual backup example
+tar czf ~/apv-manual-backup-$(date +%Y%m%d).tar.gz ~/workspace/mykb/wiki/apv ~/.claude/skills
 ```
 
 ### Critical File Locations

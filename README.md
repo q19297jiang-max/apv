@@ -9,7 +9,7 @@ tags: [apv, rfp, overview]
 
 ## Overview
 
-APV is a specialized AI-powered system for automating Request for Proposal (RFP) responses for fintech banking solutions. It combines structured knowledge bases with AI skills to generate accurate, compliant, and professionally formatted RFP responses in minutes instead of hours.
+APV is a specialized AI-powered system design for fintech RFP responses. It combines structured knowledge bases, skill definitions, templates, and support tools aimed at producing accurate, compliant, and professionally formatted responses. The repository currently reflects a partially implemented, partially validated workflow rather than a fully operational end-to-end system.
 
 ## System Components
 
@@ -52,13 +52,15 @@ APV is a specialized AI-powered system for automating Request for Proposal (RFP)
 - ✅ All compliance pages cite official source URLs
 - ✅ All pricing pages cite official calculators
 - ✅ All RFP claims cite sources
-- ✅ 100% source URL compliance enforced
-- ✅ Expert verification required
+- ⚠️ Source URL compliance is a design requirement and is validated for selected outputs, not yet proven for every workflow path
+- ⚠️ Expert verification is part of the approval design and should be treated as a required operating policy
 
 **Quality Targets**:
 - Compliance accuracy: >95%
 - Pricing accuracy: >98%
 - Source URL compliance: 100%
+
+See `docs/current-state-status.md` for the current implementation and validation scope.
 
 ## Directory Structure
 
@@ -69,7 +71,7 @@ wiki/apv/
 ├── approvals/         # Approval checklists
 ├── skills/             # AI skills
 ├── meta/               # System documentation
-└── .rfp-session/      # Working directory
+└── docs/              # Guides, plans, contracts, and status docs
 ```
 
 ## Related
@@ -81,5 +83,5 @@ wiki/apv/
 ## System Status
 
 **Version**: 1.0  
-**Status**: Design complete, implementation pending  
-**Target Launch**: 5 weeks from start date
+**Status**: Design complete, partially implemented, partially validated  
+**Current Reality**: Real pilot validation exists for brainstorm and compliance; the remaining workflow is documented more strongly than it is operationally proven

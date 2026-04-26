@@ -62,6 +62,12 @@ apv-projects/
 │   │   └── verification/         # Verification reports
 │   │       ├── url-checks.json
 │   │       └── freshness.json
+│   ├── approvals/
+│   │   ├── stage-1-requirements.md
+│   │   ├── stage-2-compliance.md
+│   │   ├── stage-3-architecture.md
+│   │   ├── stage-4-sizing.md
+│   │   └── stage-5-pricing.md
 │   └── SUMMARY.md                  # Execution summary
 └── [customer-name]--[rfp-title-2]--[YYYY-MM-DD]/
     └── ...
@@ -117,6 +123,7 @@ singtel--prepaid-cards--2026-04-28/
 |------|---------|
 | `README.md` | Project overview, customer info, status |
 | `SUMMARY.md` | Execution summary, times, approval decision |
+| `approvals/` | Internal stage review records and checklist artifacts |
 
 ---
 
@@ -134,7 +141,7 @@ DATE=$(date +%Y-%m-%d)
 
 # Create project folder
 PROJECT="apv-projects/${CUSTOMER}--${TITLE}--${DATE}"
-mkdir -p "$PROJECT"/{input,outputs,evidence/{pricing,compliance,verification}}
+mkdir -p "$PROJECT"/{input,outputs,evidence/{pricing,compliance,verification},approvals}
 
 # Verify
 ls -R "$PROJECT"

@@ -99,9 +99,23 @@ Example: `compliance/pci-dss/requirement-8-2026-04-24.pdf`
    - Note URLs that couldn't be auto-verified
    - Record expert review confirmations
 
-## Automated Evidence Management
+## Scripted And Planned Evidence Management
 
-### Scheduled Checks
+### Current Scripted Checks
+
+Run these commands manually when preparing or reviewing an RFP:
+
+```bash
+cd /Users/stevenjiang/workspace/mykb/wiki/apv && \
+   python tools/verify-source-urls.py --all > \
+   evidence/url-checks/verification-$(date +%Y-%m-%d).json
+
+cd /Users/stevenjiang/workspace/mykb/wiki/apv && \
+   python tools/check-freshness.py --all > \
+   evidence/freshness-reports/freshness-$(date +%Y-%m-%d).json
+```
+
+### Planned Scheduled Checks
 
 Run daily/weekly via cron:
 
@@ -199,7 +213,7 @@ Before submitting RFP response, verify:
 - [ ] All URLs are from trusted/official sources
 - [ ] Evidence files follow naming convention
 - [ ] Manifest includes all evidence
-- [ ] Automated verification reports attached
+- [ ] Verification reports attached
 
 ## Related
 

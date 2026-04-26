@@ -12,6 +12,8 @@ tags: [pricing, azure, southeast-asia]
 
 # Azure Pricing for Card Processing (Southeast Asia)
 
+This file is currently a reference pricing snapshot, not a fully workflow-backed pricing path on par with the AWS catalog process.
+
 ## Official Calculators
 
 | Calculator | URL | Last Updated |
@@ -50,6 +52,11 @@ tags: [pricing, azure, southeast-asia]
 
 ## Evidence Storage
 - `wiki/apv/knowledge/evidence/pricing/2026-04-24/`
+
+## Readiness Note
+
+- Use this page as a quick reference during architecture and rough-order pricing.
+- Treat final Azure proposal pricing as requiring manual calculator confirmation and fresh evidence capture for the specific RFP.
 
 ## Related
 - [[pricing-aws]] — AWS pricing

@@ -31,7 +31,7 @@ Validate infrastructure sizing calculations and capacity planning.
 
 **Status**: [ ] Pass [ ] Needs Adjustment
 
-**Evidence File**: `wiki/apv/.rfp-session/{BANK_NAME}/approvals/stage-4-sizing.md`
+**Evidence File**: `apv-projects/[customer]--[title]--[date]/approvals/stage-4-sizing.md`
 
 ## Related
 - [[unified-checklist]] — Unified approval checklist

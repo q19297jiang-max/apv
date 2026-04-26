@@ -1,6 +1,6 @@
 {
-  "test_date": "2026-04-24T06:53:21.909356+00:00",
-  "test_type": "integration",
+  "test_date": "2026-04-26T00:59:06.813755+00:00",
+  "test_type": "contract-level integration",
   "overall_status": "FAIL",
   "tests_failed": 1,
   "chains_tested": [

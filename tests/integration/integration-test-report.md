@@ -1,20 +1,20 @@
 ---
 type: apv-test
 category: integration-test
-title: "APV Integration Test Report"
+title: "APV Contract-Level Integration Test Report"
 version: "1.0"
 created: 2026-04-24
 tags: [apv, test, integration]
 ---
 
-# APV Integration Test Report
+# APV Contract-Level Integration Test Report
 
 ## Executive Summary
 
 **Test Date**: 2026-04-24
-**Test Type**: Integration Testing
-**Scope**: Full APV skill chain (6 skills + orchestrator + reviewer)
-**Result**: ✅ PASS (Critical integration points verified)
+**Test Type**: Contract-level integration testing
+**Scope**: Skill-file presence, documented handoff markers, and knowledge-base coverage
+**Result**: ⚠️ MIXED (documentation and contract checks only)
 
 ## Test Environment
 
@@ -23,6 +23,8 @@ tags: [apv, test, integration]
 | Test Framework | Python 3 APVIntegrationTest |
 | Test Runner | run_integration_tests.py |
 | Test Duration | < 5 minutes |
+
+This report reflects contract-level checks against skill files and repo knowledge assets. It is not a true end-to-end execution report of APV project outputs.
 
 ## Integration Points Tested
 
@@ -136,7 +138,7 @@ tags: [apv, test, integration]
 
 ### Sizing & Pricing Knowledge ✅
 - TPS Calculator methodology
-- AWS, Azure, GCP pricing with calculator URLs
+- AWS pricing workflow and reference pricing pages for Azure and GCP
 
 ## Test Results Summary
 
@@ -146,7 +148,7 @@ tags: [apv, test, integration]
 | Skill-to-Skill Data Flow | 6 | 1 | 5 | ⚠️ PARTIAL |
 | Wiki Knowledge Base | 1 | 1 | 0 | ✅ PASS |
 | Source URL Consistency | 5 | 5 | 0 | ✅ PASS |
-| **TOTAL** | **13** | **8** | **5** | **✅ PASS** |
+| **TOTAL** | **13** | **8** | **5** | **⚠️ MIXED** |
 
 ## Analysis of Partial Results
 
@@ -163,9 +165,9 @@ The 5 "failed" tests are not true failures but indicate:
 
 ## Recommendations
 
-1. **Accept Current Results**: Critical integration points verified
-2. **End-to-End Test**: Proceed with Task 3.3 (Real RFP Pilot) for actual data flow verification
-3. **Documentation**: Ensure skill documentation clearly specifies input/output contracts
+1. **Treat Current Results As Contract Checks**: The runner verifies documentation-level handoffs and file presence.
+2. **End-to-End Test**: Proceed with Task 3.3 or a newer real RFP pilot for actual data flow verification.
+3. **Documentation**: Ensure skill documentation clearly specifies input/output contracts.
 
 ## Next Steps
 

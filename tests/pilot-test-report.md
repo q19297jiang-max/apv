@@ -21,7 +21,7 @@ Successfully processed **BBC Bank Credit Card RFP** through the APV skill chain,
 **RFP Source**: BBC Bank (Bangladesh)
 **Documents**: 2 Excel files (Questionnaire + Volume projections)
 **Skills Tested**: 2 of 7 skills
-**Results**: ✅ Both skills produced quality outputs with source URL enforcement
+**Results**: ✅ Both tested skills produced quality outputs with source URL enforcement
 
 ---
 
@@ -131,7 +131,7 @@ Due to session constraints, the following skills were not executed in this pilot
 | rfp-generator | Not tested | Would synthesize full RFP response |
 | apv-reviewer | Not tested | Would verify source URL compliance |
 
-**Note**: These skills were validated in Phase 3.1 (Unit Testing) and Phase 3.2 (Integration Testing), so their functionality is confirmed even without real RFP execution.
+**Note**: Phase 3.1 and Phase 3.2 provide supporting unit and contract-level integration evidence, but they do not replace real-RFP validation for the remaining skills.
 
 ---
 
@@ -201,7 +201,7 @@ Due to session constraints, the following skills were not executed in this pilot
 
 ### What Worked Well
 
-1. **Source URL Enforcement**: 100% compliance achieved automatically
+1. **Source URL Enforcement**: 100% compliance observed in the tested outputs
 2. **Knowledge Base Structure**: Easy to find relevant files via Glob/Grep
 3. **Template Following**: Outputs matched expected formats
 4. **Gap Identification**: System properly flagged missing knowledge

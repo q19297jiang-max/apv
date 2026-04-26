@@ -118,7 +118,7 @@ Attach to RFP folder:
 - [ ] Specialist verification records (if applicable)
 - [ ] Pricing calculator screenshots
 
-Store in: `wiki/apv/.rfp-session/{{BANK_NAME}}/approvals/`
+Store in: `apv-projects/[customer]--[title]--[date]/approvals/`
 
 ---
 

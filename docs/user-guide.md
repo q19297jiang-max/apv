@@ -19,7 +19,7 @@ sources:
 
 ## What is APV?
 
-APV (AI-Powered RFP Velocity) is an automated RFP response system for fintech banking. It processes Request for Proposal (RFP) documents through a chain of 7 specialized skills, generating comprehensive, compliant responses in **60-90 minutes** instead of weeks.
+APV (AI-Powered RFP Velocity) is a guided RFP response workflow for fintech banking. It processes Request for Proposal (RFP) documents through a chain of 7 specialized skills. The repository documents the target-state workflow clearly, but actual validated runtime coverage is narrower than a fully operational end-to-end system.
 
 ### Key Benefits
 
@@ -51,7 +51,7 @@ TITLE="credit-card-issuing"
 DATE=$(date +%Y-%m-%d)
 
 # Create project folder
-mkdir -p "apv-projects/${CUSTOMER}--${TITLE}--${DATE}"/"{input,outputs,evidence/{pricing,compliance,verification}}
+mkdir -p "apv-projects/${CUSTOMER}--${TITLE}--${DATE}"/"{input,outputs,evidence/{pricing,compliance,verification},approvals}
 
 # Copy RFP to project
 cp /path/to/rfp.pdf "apv-projects/${CUSTOMER}--${TITLE}--${DATE}/input/"
@@ -71,11 +71,19 @@ apv-projects/[customer]--[title]--[date]/
 │   ├── 05-pricing.md
 │   ├── 06-response.md
 │   └── 07-approval.md
-└── evidence/                  # Evidence for this RFP
-    ├── pricing/              # Calculator screenshots
-    ├── compliance/           # Regulatory snapshots
-    └── verification/         # Verification reports
+├── evidence/                 # Evidence for this RFP
+│   ├── pricing/              # Calculator screenshots
+│   ├── compliance/           # Regulatory snapshots
+│   └── verification/         # Verification reports
+└── approvals/                # Internal stage-gate review artifacts
+  ├── stage-1-requirements.md
+  ├── stage-2-compliance.md
+  ├── stage-3-architecture.md
+  ├── stage-4-sizing.md
+  └── stage-5-pricing.md
 ```
+
+See `docs/runtime-project-contract.md` for the canonical project-folder contract.
 
 #### Step 2: Convert to Markdown (NEW - Required for non-markdown files)
 

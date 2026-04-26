@@ -319,48 +319,27 @@ chmod +x /Users/stevenjiang/workspace/mykb/wiki/apv/tools/monitor-urls.sh
 
 ---
 
-### Daily Health Check
+### Daily Manual Health Check
+
+Run these repo-available checks directly:
 
 ```bash
-cat > /Users/stevenjiang/workspace/mykb/wiki/apv/tools/health-check.sh << 'EOF'
-#!/bin/bash
-# Daily health check for APV system
-
-echo "=== APV Health Check ==="
-echo "Date: $(date)"
-echo ""
+cd /Users/stevenjiang/workspace/mykb/wiki/apv
 
 # 1. Check skills installed
-echo "Skills Installation:"
-ls ~/.claude/skills/ | grep rfp | wc -l
-echo "Expected: 8"
-echo ""
+ls ~/.claude/skills/ | grep rfp
 
-# 2. Check wiki accessible
-echo "Wiki Access:"
-ls /Users/stevenjiang/workspace/mykb/wiki/apv/knowledge/ >/dev/null 2>&1 && echo "✅ OK" || echo "❌ FAIL"
-echo ""
+# 2. Check wiki accessibility
+ls knowledge/
 
 # 3. Check verification scripts
-echo "Verification Scripts:"
-ls /Users/stevenjiang/workspace/mykb/wiki/apv/tools/*.py >/dev/null 2>&1 && echo "✅ OK" || echo "❌ FAIL"
-echo ""
+ls tools/*.py
 
 # 4. Run quick verification
-echo "Quick URL Check:"
-python tools/verify-source-urls.py --check https://pcisecuritystandards.org 2>&1 | head -5
-echo ""
-
-echo "=== Health Check Complete ==="
-EOF
-
-chmod +x /Users/stevenjiang/workspace/mykb/wiki/apv/tools/health-check.sh
+python tools/verify-source-urls.py --check https://pcisecuritystandards.org | head -5
 ```
 
-Add to crontab (daily at 8 AM):
-```bash
-0 8 * * * /Users/stevenjiang/workspace/mykb/wiki/apv/tools/health-check.sh | tee -a /var/log/apv-health.log
-```
+If you later want scheduled execution, add your own wrapper script outside the APV repo or through local automation tooling.
 
 ---
 

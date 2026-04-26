@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-APV Integration Test Framework
+APV Contract-Level Integration Test Framework
 
-Tests data flow between APV skills in the 6-skill chain.
+Checks documented data-flow markers, skill-file presence, and key repo knowledge assets.
+This is not an end-to-end execution test of APV project outputs.
 
 Usage:
     python3 run_integration_tests.py [--chain CHAIN_NAME] [--verbose]
@@ -108,6 +109,7 @@ class APVIntegrationTest:
 
     def assert_contains(self, text: str, substring: str, message: str):
         """Assert text contains substring"""
+        self.tests_run += 1
         if substring.lower() in text.lower():
             self.tests_passed += 1
             self.results.append({
@@ -373,9 +375,10 @@ def test_contains(test: APVIntegrationTest, text: str, substring: str, message: 
 def run_integration_tests() -> bool:
     """Run all integration tests"""
     print(f"{'='*60}")
-    print("APV Integration Tests")
+    print("APV Contract-Level Integration Tests")
     print(f"{'='*60}")
-    print("Testing data flow between skills in the 6-skill chain")
+    print("Checking skill-file presence, documented handoff markers, and key knowledge assets")
+    print("This runner does not execute a real APV project end-to-end")
     print(f"{'='*60}\n")
 
     test = APVIntegrationTest("Full Chain")
@@ -417,7 +420,7 @@ def main():
 
     report = {
         "test_date": datetime.now(timezone.utc).isoformat(),
-        "test_type": "integration",
+        "test_type": "contract-level integration",
         "overall_status": status,
         "tests_failed": tests_failed,
         "chains_tested": [

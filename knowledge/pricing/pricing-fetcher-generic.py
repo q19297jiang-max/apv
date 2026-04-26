@@ -9,8 +9,8 @@ is read from the catalog (source of truth).
 Supported providers: AWS, Azure, GCP (easily extensible)
 
 Usage:
-    python pricing-fetcher.py --provider aws
-    python pricing-fetcher.py --all
+    python pricing-fetcher-generic.py --provider aws
+    python pricing-fetcher-generic.py --all
 """
 
 import sys
@@ -442,13 +442,13 @@ Workflow:
   4. Open calculator for manual verification
 
 Examples:
-  python pricing-fetcher.py --provider aws
-  python pricing-fetcher.py --all
+    python pricing-fetcher-generic.py --provider aws
+    python pricing-fetcher-generic.py --all
 
 Next Steps:
   1. Review the template in /tmp/apv-pricing-updates/
   2. Verify pricing in the calculator
-  3. Run: python pricing-verify.py --provider <provider>
+    3. Run: python pricing-format-validator.py --provider <provider>
 
 Adding New Providers:
   1. Create [provider]-component-catalog.md

@@ -16,9 +16,14 @@ Complete documentation for the APV (AI-Powered RFP Velocity) system.
 | Document | Description |
 |----------|-------------|
 | [[apv-readme]] | APV system overview and quick start |
+| [[current-state-status]] | Canonical implementation and validation status |
 | [[session-rfp-ai-system-design]] | Complete system design with 6-skill chain |
 | [[apv-accuracy-assurance]] | Accuracy framework with source URL requirements |
 | [[apv-task-list-revised]] | 5-week implementation task list |
+
+## Read This First
+
+Read [[current-state-status]] before treating workflow, operations, or timing guidance in this repository as production-ready behavior. Several APV documents describe target-state workflow design, while the current validated scope is narrower.
 
 ## Directory Structure
 
@@ -62,8 +67,7 @@ wiki/apv/
 │   └── rfp-approver/                  # Unified approval review
 ├── meta/                              # System documentation
 │   └── system-index.md                # This file
-└── .rfp-session/                      # Working directory (gitignored)
-    └── {BANK_NAME}/                   # Per-RFP working folder
+└── docs/                              # Guides, plans, and runtime contracts
 ```
 
 ## Knowledge Base Templates
@@ -117,6 +121,8 @@ wiki/apv/
 - Pricing accuracy: >98%
 - Source URL compliance: 100%
 
+These are design targets, not blanket proof that every APV subsystem has already achieved them in a real end-to-end run.
+
 ### Approval Gate
 - Single unified approval (15 minutes)
 - Source URL validation
@@ -129,6 +135,8 @@ wiki/apv/
 - Screenshots required for all calculator outputs
 
 ## Implementation Status
+
+Current repo status is best summarized in [[current-state-status]]. The phased table below reflects the original implementation roadmap and should not be interpreted as the only status signal.
 
 | Phase | Tasks | Status |
 |-------|-------|--------|

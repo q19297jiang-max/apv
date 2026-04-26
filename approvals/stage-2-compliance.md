@@ -59,7 +59,7 @@ Validate all compliance claims with official source URLs and verify expert revie
 
 **Specialist Trigger**: New country regulation or complex compliance scenario
 
-**Evidence File**: `wiki/apv/.rfp-session/{BANK_NAME}/approvals/stage-2-compliance.md`
+**Evidence File**: `apv-projects/[customer]--[title]--[date]/approvals/stage-2-compliance.md`
 
 ## Related
 - [[unified-checklist]] — Unified approval checklist

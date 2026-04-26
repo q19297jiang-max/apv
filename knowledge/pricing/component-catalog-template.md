@@ -151,7 +151,7 @@ Follow the appropriate table format from above.
 
 If adding a new cloud provider (Azure, GCP), create:
 - `[provider]-component-catalog.md`
-- Update pricing-fetcher.py to parse the new catalog
+- Update pricing-fetcher-generic.py to parse the new catalog
 - Add provider-specific calculator URLs
 
 ## Validation Checklist

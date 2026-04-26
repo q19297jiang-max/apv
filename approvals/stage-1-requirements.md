@@ -46,7 +46,7 @@ Validate that RFP requirements are complete and clear before proceeding with sol
 
 **If Needs Clarification**: Submit clarification questions to customer
 
-**Evidence File**: `wiki/apv/.rfp-session/{BANK_NAME}/approvals/stage-1-requirements.md`
+**Evidence File**: `apv-projects/[customer]--[title]--[date]/approvals/stage-1-requirements.md`
 
 ## Related
 - [[unified-checklist]] — Unified approval checklist

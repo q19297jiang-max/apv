@@ -10,7 +10,7 @@ sources:
 
 # Source URL Verification System
 
-Automated verification system for ensuring APV source URLs are valid, accessible, and fresh.
+Scripted verification system for ensuring APV source URLs are valid, accessible, and fresh. Scheduler-based automation is planned, but the repo currently proves the scripts more strongly than an always-on operating loop.
 
 ## Overview
 
@@ -151,7 +151,7 @@ For each pricing estimate:
 
 ## Evidence Collection
 
-### Automated Evidence
+### Script-Generated Evidence
 
 Verification scripts generate JSON reports:
 
@@ -191,7 +191,9 @@ See [[evidence/README.md]] for evidence templates.
 
 ## Scheduled Verification
 
-### Weekly Checks
+The commands below describe a planned scheduler integration for the existing verification scripts. If no scheduler is configured in your environment, run the scripts manually.
+
+### Planned Weekly Checks
 
 ```bash
 # Run every Monday at 2 AM

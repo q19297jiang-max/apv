@@ -41,7 +41,7 @@ Validate all pricing calculations with official calculator URLs and evidence scr
 
 **Specialist Trigger**: Custom pricing or non-standard configuration
 
-**Evidence File**: `wiki/apv/.rfp-session/{BANK_NAME}/approvals/stage-5-pricing.md`
+**Evidence File**: `apv-projects/[customer]--[title]--[date]/approvals/stage-5-pricing.md`
 
 ## Related
 - [[unified-checklist]] — Unified approval checklist

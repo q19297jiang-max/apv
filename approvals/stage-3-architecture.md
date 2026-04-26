@@ -44,7 +44,7 @@ Validate solution architecture design and documentation.
 
 **Specialist Trigger**: Complex architecture or new card system type
 
-**Evidence File**: `wiki/apv/.rfp-session/{BANK_NAME}/approvals/stage-3-architecture.md`
+**Evidence File**: `apv-projects/[customer]--[title]--[date]/approvals/stage-3-architecture.md`
 
 ## Related
 - [[unified-checklist]] — Unified approval checklist

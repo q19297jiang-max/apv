@@ -20,7 +20,7 @@ sources:
 
 # AWS Pricing Knowledge Base Workflow
 
-A sustainable, automated system for maintaining accurate AWS pricing data with minimal manual effort and maximum data freshness.
+The most developed pricing workflow in APV today. AWS pricing has the strongest combination of populated catalog content, repo-local scripts, and documented freshness rules, but it should still be treated as a manually operated workflow with script support rather than a fully automated pricing pipeline.
 
 ## Architecture
 
@@ -214,12 +214,12 @@ The parser automatically detects section types:
 | Calculator verification | Quarterly | Infrastructure Architect | 2 hours |
 | Catalog updates | Quarterly | Infrastructure Architect | 1 hour |
 | Format validation | Quarterly | System Architect | 15 minutes |
-| Price freshness check | Monthly | Automated | Instant |
+| Price freshness check | Monthly | Script-assisted manual review | Instant |
 | Full workflow test | Quarterly | System Architect | 30 minutes |
 
 ## Test Results
 
-The system was tested and verified on 2026-04-25:
+The AWS pricing workflow was exercised on 2026-04-25 at the script and content level:
 
 ```
 📊 Found 60 pricing items across 17 sections
@@ -241,12 +241,12 @@ The system was tested and verified on 2026-04-25:
    - shield: 1 items
 
 ✅ Format validation passed (14 tables, 0 errors)
-✅ Knowledge base updated successfully
+✅ Knowledge base updated successfully for AWS
 ```
 
 ## Extensibility
 
-The system is designed to be extensible:
+The system is designed to be extensible, but AWS is currently the most developed provider path in this repository:
 
 ### Adding New AWS Components
 1. Add section to `aws-component-catalog.md`

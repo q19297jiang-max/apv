@@ -101,16 +101,21 @@ RFP Response Document (Ready for Submission)
 ## Output Files
 
 ```
-apv-output/[customer]--[rfp-title]--[date]/
-├── 01-brainstorm-report.md
-├── 02-compliance-analysis.md
-├── 03-architecture-design.md
-├── 04-sizing-report.md
-├── 05-cost-estimation.md
-├── 06-rfp-response.md          (Main deliverable)
-├── 07-approval-report.md
-└── evidence/
+apv-projects/[customer]--[rfp-title]--[date]/
+├── input/
+├── outputs/
+│   ├── 01-brainstorm.md
+│   ├── 02-compliance.md
+│   ├── 03-architecture.md
+│   ├── 04-sizing.md
+│   ├── 05-pricing.md
+│   ├── 06-response.md          (Main deliverable)
+│   └── 07-approval.md
+├── evidence/
+└── approvals/
 ```
+
+Use the canonical runtime contract in `docs/runtime-project-contract.md` for active APV runs.
 
 ## Related Skills
 
