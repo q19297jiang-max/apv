@@ -75,7 +75,7 @@ Expected: PASS.
 
 **Step 3: Run focused behavior check against the BBC sample project**
 
-Run: `python3 wiki/apv/tools/validate-source-urls.py --project apv-projects/bbc-bank--credit-card-issuing-2026-04-25`
+Run: `python3 wiki/apv/tools/validate-source-urls.py --project wiki/apv/tests/projects/bbc-bank--credit-card-issuing-2026-04-25`
 Expected: fewer false positives than current behavior, ideally eliminating fragment-link failures.
 
 **Step 4: Commit**
@@ -104,7 +104,7 @@ Expected: non-zero because the file does not yet exist.
 
 Create a script that:
 
-- targets `apv-projects/bbc-bank--credit-card-issuing-2026-04-25/` by default
+- targets `tests/projects/bbc-bank--credit-card-issuing-2026-04-25/` by default
 - runs `tools/validate-source-urls.py --project ...`
 - runs `tools/check-pricing-freshness.py --project ...`
 - returns a concise status summary and non-zero exit when a blocking check fails

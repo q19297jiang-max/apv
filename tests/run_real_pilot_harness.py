@@ -14,9 +14,8 @@ import sys
 from pathlib import Path
 
 
-WORKSPACE_ROOT = Path(__file__).resolve().parents[3]
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_PROJECT = WORKSPACE_ROOT / "apv-projects" / "bbc-bank--credit-card-issuing-2026-04-25"
+DEFAULT_PROJECT = REPO_ROOT / "tests" / "projects" / "bbc-bank--credit-card-issuing-2026-04-25"
 
 
 def run_check(label: str, command: list[str]) -> tuple[int, str]:

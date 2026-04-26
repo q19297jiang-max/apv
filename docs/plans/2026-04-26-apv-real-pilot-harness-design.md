@@ -17,7 +17,7 @@ Turn the existing BBC sample project into a repeatable real-pilot validation tar
 
 ## Current Findings
 
-- A real sample project already exists at `apv-projects/bbc-bank--credit-card-issuing-2026-04-25/`.
+- A real sample project exists and can be stored as a repo-tracked pilot fixture under `tests/projects/bbc-bank--credit-card-issuing-2026-04-25/`.
 - That project already contains stage outputs, pricing evidence, and approval artifacts.
 - `check-pricing-freshness.py --project` passes cleanly against it.
 - `validate-source-urls.py --project` fails for two local reasons:
