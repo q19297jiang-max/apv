@@ -379,6 +379,7 @@ def run_integration_tests() -> bool:
     print(f"{'='*60}")
     print("Checking skill-file presence, documented handoff markers, and key knowledge assets")
     print("This runner does not execute a real APV project end-to-end")
+    print("For canonical apv-projects artifact validation, run pytest tests/test_runtime_project_fixture.py")
     print(f"{'='*60}\n")
 
     test = APVIntegrationTest("Full Chain")
@@ -421,6 +422,8 @@ def main():
     report = {
         "test_date": datetime.now(timezone.utc).isoformat(),
         "test_type": "contract-level integration",
+        "test_scope": "skill-file presence, documented handoff markers, and key knowledge assets",
+        "runtime_fixture_test": "tests/test_runtime_project_fixture.py",
         "overall_status": status,
         "tests_failed": tests_failed,
         "chains_tested": [

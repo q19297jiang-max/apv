@@ -16,6 +16,8 @@ tags: [apv, test, integration]
 **Scope**: Skill-file presence, documented handoff markers, and knowledge-base coverage
 **Result**: ⚠️ MIXED (documentation and contract checks only)
 
+This report describes the contract-level runner only. It should be read alongside the separate runtime fixture layer in `tests/test_runtime_project_fixture.py`, which validates canonical `apv-projects/...` folder structure and selected output markers without claiming full end-to-end execution.
+
 ## Test Environment
 
 | Parameter | Value |
@@ -166,14 +168,16 @@ The 5 "failed" tests are not true failures but indicate:
 ## Recommendations
 
 1. **Treat Current Results As Contract Checks**: The runner verifies documentation-level handoffs and file presence.
-2. **End-to-End Test**: Proceed with Task 3.3 or a newer real RFP pilot for actual data flow verification.
-3. **Documentation**: Ensure skill documentation clearly specifies input/output contracts.
+2. **Use Runtime Fixture Checks**: Validate canonical APV project artifacts with `tests/test_runtime_project_fixture.py` before claiming stronger runtime confidence.
+3. **End-to-End Test**: Proceed with Task 3.3 or a newer real RFP pilot for actual data flow verification.
+4. **Documentation**: Ensure skill documentation clearly specifies input/output contracts.
 
 ## Next Steps
 
-1. **Task 3.3**: Real RFP Pilot - Process actual RFP through complete system
-2. **Task 3.4**: Performance Optimization - Optimize slow skills based on pilot results
-3. **Task 3.5**: Source URL Validation Testing - Test verification scripts
+1. **Runtime Fixture Validation**: Keep `tests/test_runtime_project_fixture.py` green as the canonical artifact-level check.
+2. **Task 3.3**: Real RFP Pilot - Process actual RFP through complete system
+3. **Task 3.4**: Performance Optimization - Optimize slow skills based on pilot results
+4. **Task 3.5**: Source URL Validation Testing - Test verification scripts
 
 ## Related
 

@@ -1,6 +1,8 @@
 {
-  "test_date": "2026-04-26T00:59:06.813755+00:00",
+  "test_date": "2026-04-26T01:19:15.272344+00:00",
   "test_type": "contract-level integration",
+  "test_scope": "skill-file presence, documented handoff markers, and key knowledge assets",
+  "runtime_fixture_test": "tests/test_runtime_project_fixture.py",
   "overall_status": "FAIL",
   "tests_failed": 1,
   "chains_tested": [

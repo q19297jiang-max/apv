@@ -46,6 +46,18 @@ APV is a specialized AI-powered system design for fintech RFP responses. It comb
 /apv-generate "Bank Name"
 ```
 
+## Test Setup
+
+APV's executable checks assume a local Python environment with the repo's dev test dependency installed.
+
+```bash
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+python -m pytest tests/test_runtime_project_fixture.py tests/test_doc_claims.py -q
+python tests/run_integration_tests.py --verbose
+```
+
 ## Accuracy Assurance
 
 **Critical Requirements**:
