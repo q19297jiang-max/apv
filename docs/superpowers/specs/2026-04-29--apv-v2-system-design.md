@@ -170,13 +170,18 @@ At pipeline start, the orchestrator:
 - `evidence/` — project-local evidence files (checksums)
 - `working/05-commercial-overrides.md` — partner rates, manual quotes (checksum)
 
-Any file within the snapshot boundary that is modified after snapshot creation is flagged as a **post-snapshot mutation** in the audit log. The reviewer must explicitly acknowledge post-snapshot changes before approval.
+Any file within the snapshot boundary that is modified after snapshot creation **invalidates the snapshot**. The orchestrator enforces:
+1. Detect mutation (checksum mismatch against `00-knowledge-snapshot.json`)
+2. Halt pipeline — no further stages may run
+3. Two options: **resnapshot** (create new snapshot, rerun affected downstream stages) or **revert** (undo the mutation, continue with original snapshot)
+
+Post-snapshot mutation is a structural rejection, not a reviewer judgment call. This ensures reproducibility is enforced by the system, not by human discipline.
 
 If knowledge needs updating (stale pricing discovered, gap found):
 - Log it to `working/00-gap-log.md`
-- Continue with assumption flag
+- Continue with assumption flag — do NOT modify knowledge mid-run
 - Fix knowledge AFTER the run completes (post-RFP promotion)
-- Re-run the project if the fix materially changes outputs
+- Re-run the project with a fresh snapshot if the fix materially changes outputs
 
 This ensures:
 - Two runs of the same project with the same snapshot produce the same results
@@ -361,26 +366,9 @@ This makes rfp-brainstorm the interactive entry point where human conversation i
 - `/rfp-pricer` — generate one canonical pricing output from architecture + sizing
 - Queries snapshot SQLite for pricing, checks freshness, emits evidence
 - Single output: `outputs/05-pricing.md`
+- Scenario engine is a Phase 5 future enhancement (see Appendix A)
 
-**Future enhancement (Phase 5)**: Scenario engine adds iterative capability:
-
-- `/rfp-pricer "Single-AZ, 1yr savings"` — generate a new scenario from description
-- `/rfp-pricer --budget 50000` — auto-generate 2-3 scenarios fitting a budget target by adjusting commitment model, HA model, instance sizing, or provider
-- `/rfp-pricer --compare` — render side-by-side comparison of all scenarios
-- `/rfp-pricer --select 2` — lock a scenario as chosen, generate `outputs/05-pricing.md`
-
-Scenario files live in `working/05-scenarios/` (only when scenario engine is active):
-
-```
-working/05-scenarios/
-├── scenario-01-baseline.md
-├── scenario-02-savings-plan.md
-├── scenario-03-budget-fit.md
-├── scenario-comparison.md
-└── scenario-selected.md
-```
-
-Stages 1-4 produce stable inputs. Stage 5 is where commercial iteration happens. Stages 6-7 finalize based on the selected scenario.
+Stages 1-4 produce stable inputs. Stage 5 generates pricing. Stages 6-7 finalize.
 
 ### Non-Public / Commercial Pricing
 
@@ -402,6 +390,8 @@ Commercial overrides are stored in `working/05-commercial-overrides.md` with:
 - Applied on top of public pricing in the scenario engine
 - Evidence: partner quote PDF/email in `evidence/pricing/commercial/`
 - Reviewer verifies: overrides have `approved_by` + `valid_until`, evidence exists, not expired
+
+**Deferred: Commercial Governance Model.** Quote precedence rules (which quote wins when multiple exist for the same line item), conflict resolution between public pricing and partner rates, approval authority hierarchy, and separation of customer-visible pricing vs internal margin/cost assumptions are real enterprise concerns. These are intentionally deferred until the system has processed real commercial RFPs and the actual conflict patterns are known. Designing governance for hypothetical problems leads to over-engineering. The `approved_by` + `valid_until` fields plus reviewer verification are sufficient initial controls.
 
 ---
 
@@ -503,7 +493,7 @@ Each stage follows the same cycle:
 4. **Emit & validate**: write artifacts, `validate-gates.py --verify N` — halt if emit incomplete
 5. **Gap log**: append any gaps or assumptions to `working/00-gap-log.md` (gaps fixed post-run, not mid-pipeline)
 
-Stage execution order: brainstorm → compliance → architecture → sizing → pricing (iterative) → response → review.
+Stage execution order: brainstorm → compliance → architecture → sizing → pricing → response → review.
 
 ### Phase 4: Post-RFP Feedback
 
@@ -556,7 +546,9 @@ Halt, show error with suggestion for resolution.
 
 **Incomplete RFP**: Path C entry. Brainstorm asks clarifying questions interactively. Gap log will be larger. Reviewer flags higher assumption count.
 
-**Empty knowledge base (first run)**: the system enforces a **minimum bootstrap threshold** before allowing a production RFP run. The orchestrator checks at pipeline start:
+**Empty knowledge base (first run)**: the system enforces readiness at **two levels**:
+
+**Level 1: Platform bootstrap threshold** — checked by the orchestrator at pipeline start. Minimum domain presence to run at all:
 
 | Domain | Minimum for Production Run |
 |--------|---------------------------|
@@ -566,7 +558,14 @@ Halt, show error with suggestion for resolution.
 | Pricing | Component catalog for at least 1 provider, verified <30 days |
 | Sizing | TPS calculator methodology |
 
-If the threshold is not met, the orchestrator can:
+**Level 2: RFP-fit readiness** — assessed by rfp-brainstorm (Stage 1) against the actual bid scope. After analyzing the RFP, brainstorm cross-references required coverage against available knowledge and reports:
+- Which specific countries, regulations, providers, and payment types this RFP needs
+- Which of those are covered in the knowledge base vs missing
+- Gap severity: if critical coverage gaps exist (e.g., target country regulations missing, required cloud provider not in KB), brainstorm logs BLOCKER-level gaps and the pipeline halts before Stage 2
+
+Level 1 is a coarse "is the platform minimally viable?" check. Level 2 is a fine-grained "can we credibly respond to THIS specific RFP?" check. Both must pass.
+
+If either threshold is not met, the orchestrator can:
 - **HALT**: refuse to run, list what's missing
 - **DRAFT mode**: run with explicit `mode: draft` flag — all outputs watermarked as draft, reviewer auto-rejects for production release
 
@@ -626,8 +625,47 @@ Recommended build order:
 
 1. **Python tooling first**: `sync-db.py`, `validate-gates.py`, `normalize.py`, `knowledge-audit.py` — testable without AI
 2. **Knowledge bootstrap**: audit-first migration from V1, run `sync-db.py`
-3. **Simple end-to-end path**: build ALL 7 stage skills in basic form (no scenario engine yet) — prove ingest → brainstorm → compliance → architect → calculator → pricer (single scenario) → generator → reviewer works
+3. **Simple end-to-end path**: build ALL 7 stage skills in basic form (no scenario engine) — prove ingest → brainstorm → compliance → architect → calculator → pricer (single-path) → generator → reviewer works
 4. **Orchestrator**: sequences the proven stages with gate checks
 5. **Pricing scenario engine**: add `--budget`, `--compare`, `--select` to rfp-pricer after the basic path works
 6. **Commercial pricing**: add `working/05-commercial-overrides.md` support
 7. **Feedback loop**: `knowledge-promote.py`, `knowledge-stats.py` — build after running real RFPs
+
+---
+
+## Appendix A: Pricing Scenario Engine (Deferred to Phase 5)
+
+This appendix documents the pricing scenario engine design for future implementation. It is NOT part of the baseline system. The baseline rfp-pricer produces a single canonical pricing output.
+
+### When to Build
+
+Build this after:
+- The single-path pipeline is proven end-to-end
+- At least 3-5 real RFPs have been processed
+- Sales team confirms the need for iterative scenario comparison
+
+### Scenario Engine Design
+
+rfp-pricer gains 4 commands:
+
+- `/rfp-pricer "Single-AZ, 1yr savings"` — generate a new scenario from description
+- `/rfp-pricer --budget 50000` — auto-generate 2-3 scenarios fitting a budget target by adjusting commitment model, HA model, instance sizing, or provider
+- `/rfp-pricer --compare` — render side-by-side comparison of all scenarios
+- `/rfp-pricer --select 2` — lock a scenario as chosen, generate `outputs/05-pricing.md`
+
+Scenario files live in `working/05-scenarios/`:
+
+```
+working/05-scenarios/
+├── scenario-01-baseline.md
+├── scenario-02-savings-plan.md
+├── scenario-03-budget-fit.md
+├── scenario-comparison.md
+└── scenario-selected.md
+```
+
+### Open Design Questions (resolve before building)
+
+- How do commercial overrides apply across scenarios? (same overrides for all, or per-scenario?)
+- How does the reviewer verify multiple scenarios? (review selected only, or all?)
+- How does the snapshot boundary interact with scenario iteration? (single snapshot for all scenarios, or resnapshot per iteration?)
