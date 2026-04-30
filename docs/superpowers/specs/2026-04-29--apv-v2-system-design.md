@@ -76,7 +76,7 @@ Every RFP run:
 
 ## Knowledge Base Design
 
-### 6 Domains
+### 7 Domains
 
 | Domain | Content | Freshness | Source |
 |--------|---------|-----------|--------|
@@ -95,7 +95,7 @@ Every knowledge file has:
 ```yaml
 ---
 type: apv-knowledge
-category: compliance|pricing|infrastructure|card-systems|sizing|patterns
+category: compliance|pricing|commercial|infrastructure|card-systems|sizing|patterns
 source_url: "https://official-url"        # MANDATORY
 captured_date: YYYY-MM-DD
 verified_by: "Role Name"
@@ -140,12 +140,13 @@ DRAFT → ACTIVE → STALE → REFRESH → ACTIVE
 
 ### Knowledge Snapshot (Immutability During Pipeline)
 
-**Critical design rule**: The knowledge base must NOT change during an active RFP run. All stages in a single run must read from the same knowledge state.
+**Critical design rule**: The factual basis of an RFP run must NOT change during execution. All stages must operate on the same snapshot of knowledge, evidence, and commercial inputs.
 
 At pipeline start, the orchestrator:
 1. Records the current git commit SHA of `knowledge/` into `working/00-knowledge-snapshot.json`
 2. Builds a project-local SQLite snapshot: `working/apv-v2-snapshot.sqlite`
-3. All stages query the snapshot DB, NOT the live knowledge DB
+3. Records checksums of all project-local evidence and commercial override files
+4. All stages query the snapshot DB, NOT the live knowledge DB
 
 ```json
 // working/00-knowledge-snapshot.json
@@ -154,9 +155,22 @@ At pipeline start, the orchestrator:
   "snapshot_date": "2026-04-29T09:00:00Z",
   "stale_entries": [],
   "missing_domains": [],
-  "bootstrap_coverage": "92%"
+  "bootstrap_coverage": "92%",
+  "evidence_checksums": {
+    "evidence/pricing/aws/pricing-evidence.md": "sha256:abc123...",
+    "evidence/compliance/pci-dss-mapping.md": "sha256:def456..."
+  },
+  "commercial_overrides_checksum": "sha256:789ghi...",
+  "snapshot_boundary": "knowledge/ + evidence/ + working/05-commercial-overrides.md"
 }
 ```
+
+**Snapshot boundary** includes:
+- `knowledge/` — reusable knowledge base (git SHA)
+- `evidence/` — project-local evidence files (checksums)
+- `working/05-commercial-overrides.md` — partner rates, manual quotes (checksum)
+
+Any file within the snapshot boundary that is modified after snapshot creation is flagged as a **post-snapshot mutation** in the audit log. The reviewer must explicitly acknowledge post-snapshot changes before approval.
 
 If knowledge needs updating (stale pricing discovered, gap found):
 - Log it to `working/00-gap-log.md`
@@ -268,7 +282,7 @@ skills/
 ├── rfp-compliance/SKILL.md      # Stage 2
 ├── rfp-architect/SKILL.md       # Stage 3
 ├── rfp-calculator/SKILL.md      # Stage 4
-├── rfp-pricer/SKILL.md          # Stage 5 — iterative scenario engine
+├── rfp-pricer/SKILL.md          # Stage 5 — single-path pricing (scenario engine is Phase 5 enhancement)
 ├── rfp-generator/SKILL.md       # Stage 6
 └── apv-reviewer/SKILL.md        # Stage 7
 ```
@@ -311,6 +325,27 @@ arguments: [named, args]
 [Rules for missing/stale knowledge: halt, assume, or log]
 ```
 
+### Output Classification
+
+Every stage output carries an `output_class` that determines how it may be used downstream:
+
+| Output Class | Meaning | May Appear in Final Response? | Stages |
+|-------------|---------|------------------------------|--------|
+| `exploratory` | Strategy suggestions, approach options, analysis based on conversation or general reasoning. Not directly citable. | Only as context/background, never as a claim | rfp-brainstorm |
+| `evidence-backed` | Claims supported by knowledge pages with verified `source_url`. Reviewer verifies source trail. | Yes — citable claims with source URLs | rfp-compliance, rfp-pricer |
+| `derived` | Conclusions derived from evidence-backed inputs. Traceable to upstream evidence but not directly sourced. | Yes — traceable through upstream stage outputs | rfp-architect, rfp-calculator, rfp-generator |
+
+**Reviewer enforcement rule**: The final response (`outputs/06-response.md`) must not contain claims that trace only to `exploratory` outputs. Every factual claim must trace to an `evidence-backed` or `derived` output. `exploratory` content may inform strategy and framing, but cannot be the sole basis for a compliance, pricing, or architecture claim.
+
+Each stage output includes an `output_class` field in its frontmatter:
+```yaml
+---
+stage: 2
+output_class: evidence-backed
+snapshot_sha: a1b2c3d
+---
+```
+
 ### Key Skill Designs
 
 **rfp-brainstorm** accepts 3 input modes:
@@ -321,14 +356,20 @@ arguments: [named, args]
 
 This makes rfp-brainstorm the interactive entry point where human conversation is expected. Downstream stages run more autonomously because brainstorm captured the intent.
 
-**rfp-pricer** operates as a scenario engine with 4 commands:
+**rfp-pricer** baseline operates as a single-path pricing stage:
+
+- `/rfp-pricer` — generate one canonical pricing output from architecture + sizing
+- Queries snapshot SQLite for pricing, checks freshness, emits evidence
+- Single output: `outputs/05-pricing.md`
+
+**Future enhancement (Phase 5)**: Scenario engine adds iterative capability:
 
 - `/rfp-pricer "Single-AZ, 1yr savings"` — generate a new scenario from description
 - `/rfp-pricer --budget 50000` — auto-generate 2-3 scenarios fitting a budget target by adjusting commitment model, HA model, instance sizing, or provider
 - `/rfp-pricer --compare` — render side-by-side comparison of all scenarios
 - `/rfp-pricer --select 2` — lock a scenario as chosen, generate `outputs/05-pricing.md`
 
-Scenario files live in `working/05-scenarios/`:
+Scenario files live in `working/05-scenarios/` (only when scenario engine is active):
 
 ```
 working/05-scenarios/
@@ -356,9 +397,11 @@ Many real RFP quotes depend on pricing that is NOT available through public APIs
 
 Commercial overrides are stored in `working/05-commercial-overrides.md` with:
 - Override type, source (e.g., "partner quote from Acme Reseller"), date
+- `approved_by` — who authorized this override (mandatory)
+- `valid_until` — expiry date of the quote/rate (mandatory, reviewer rejects expired overrides)
 - Applied on top of public pricing in the scenario engine
 - Evidence: partner quote PDF/email in `evidence/pricing/commercial/`
-- Reviewer verifies commercial overrides have evidence before approval
+- Reviewer verifies: overrides have `approved_by` + `valid_until`, evidence exists, not expired
 
 ---
 
