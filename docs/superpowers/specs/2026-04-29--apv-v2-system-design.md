@@ -29,8 +29,10 @@ Enhanced Claude Code Skills with Python tooling. Each pipeline stage is a Claude
 │  ─ compliance-fetcher.py → regulation updates            │
 │  ─ freshness-checker.py  → flag stale entries            │
 │                                                          │
-│  0b. On-Demand Fetch (triggered by pipeline gaps)        │
-│  ─ Same scripts, targeted to specific components         │
+│  0b. Pre-Run Readiness Check                             │
+│  ─ Orchestrator checks freshness before pipeline start   │
+│  ─ Halts if critical knowledge is stale/missing          │
+│  ─ Knowledge is NEVER refreshed mid-pipeline             │
 │                                                          │
 │  0c. Post-RFP Promotion (after each completed RFP)      │
 │  ─ Review gap log → create missing knowledge pages       │
@@ -82,6 +84,7 @@ Every RFP run:
 | Card Systems | Issuing, acquiring, gateway, 3DS, tokenization, wallets | 365 days | Scheme documentation |
 | Infrastructure | AWS/Azure/GCP services (EKS, RDS, AKS, GKE, etc.) | 90 days | Cloud provider docs |
 | Pricing | Component catalogs per cloud provider | 30 days | Official calculators/APIs |
+| Commercial | Partner rates, enterprise discounts, implementation fees, tax, FX | Per-deal | Manual entry, partner portals |
 | Sizing | TPS methodology, peak multipliers, HA patterns | 365 days | Internal methodology |
 | Patterns | Reference architectures for common payment scenarios | No expiry | Project experience |
 
@@ -102,7 +105,19 @@ tags: [apv, category, subcategory]
 ---
 ```
 
-Body includes: overview, key requirements/components, tables with source URL columns, implementation guidance per cloud provider, RFP response template with `[Company Name]` placeholders, evidence checklist, common questions, and `[[wikilinks]]` to related pages.
+Body structure varies by domain — each domain has its own template rather than a universal page format:
+
+| Domain | Required Sections | Optional Sections |
+|--------|------------------|-------------------|
+| Compliance | Overview, Requirements, Source Citations, Evidence Required | RFP Response Template, Implementation Guidance |
+| Card Systems | Overview, Key Components, Data Flows | Integration Patterns, Common Questions |
+| Infrastructure | Overview, Service Features, Regions, Pricing Tier | HA/DR Patterns, Compliance Mapping |
+| Pricing | Component Table (instance, price, source URL, verified date) | Savings Plans, Reserved Pricing |
+| Commercial | Override Type, Source, Rate, Evidence Path | Validity Period, Approval Status |
+| Sizing | Methodology, Formulas, Peak Multipliers | Reference Benchmarks |
+| Patterns | Problem, Solution Architecture, Trade-offs, When To Use | Reference Projects |
+
+Domain templates live in `templates/<domain>.template.md`.
 
 ### Knowledge Lifecycle
 
@@ -119,9 +134,40 @@ DRAFT → ACTIVE → STALE → REFRESH → ACTIVE
 
 **Scheduled (proactive)**: monthly cron runs `pricing-fetcher.py --all-providers` and `freshness.py --report`. Handles pricing, the fastest-aging domain.
 
-**Pipeline-triggered (reactive)**: when a skill detects stale or missing knowledge, it triggers the relevant fetcher script, syncs the DB, and retries.
+**Pre-run readiness check (reactive)**: before pipeline starts, orchestrator runs `freshness.py` against the snapshot. If critical knowledge is stale or missing, pipeline halts with a list of what needs refreshing. Human triggers fetchers, updates knowledge, and re-runs. **Knowledge is NEVER refreshed mid-pipeline** — this preserves reproducibility and auditability.
 
 **Post-RFP promotion (learning)**: `knowledge-promote.py` reviews gap logs from completed RFPs and suggests new pages, updates to existing pages, and patterns to capture. Human reviews and approves each suggestion.
+
+### Knowledge Snapshot (Immutability During Pipeline)
+
+**Critical design rule**: The knowledge base must NOT change during an active RFP run. All stages in a single run must read from the same knowledge state.
+
+At pipeline start, the orchestrator:
+1. Records the current git commit SHA of `knowledge/` into `working/00-knowledge-snapshot.json`
+2. Builds a project-local SQLite snapshot: `working/apv-v2-snapshot.sqlite`
+3. All stages query the snapshot DB, NOT the live knowledge DB
+
+```json
+// working/00-knowledge-snapshot.json
+{
+  "knowledge_commit": "a1b2c3d",
+  "snapshot_date": "2026-04-29T09:00:00Z",
+  "stale_entries": [],
+  "missing_domains": [],
+  "bootstrap_coverage": "92%"
+}
+```
+
+If knowledge needs updating (stale pricing discovered, gap found):
+- Log it to `working/00-gap-log.md`
+- Continue with assumption flag
+- Fix knowledge AFTER the run completes (post-RFP promotion)
+- Re-run the project if the fix materially changes outputs
+
+This ensures:
+- Two runs of the same project with the same snapshot produce the same results
+- Every RFP artifact traces to an exact knowledge revision
+- The audit chain is complete: project → snapshot SHA → knowledge files at that commit
 
 ### Entry Points for New Knowledge
 
@@ -150,11 +196,15 @@ CREATE TABLE knowledge_pages (
     captured_date   DATE,
     last_verified   DATE,
     freshness_days  INTEGER,
-    tags            TEXT,
-    is_stale        BOOLEAN GENERATED ALWAYS AS (
-                        julianday('now') - julianday(last_verified) > freshness_days
-                    ) STORED
+    tags            TEXT
 );
+
+-- Staleness computed at query time, not stored
+-- (SQLite rejects non-deterministic expressions in STORED generated columns)
+CREATE VIEW stale_knowledge AS
+SELECT *,
+    julianday('now') - julianday(last_verified) > freshness_days AS is_stale
+FROM knowledge_pages;
 
 CREATE TABLE pricing (
     id              INTEGER PRIMARY KEY,
@@ -291,6 +341,25 @@ working/05-scenarios/
 
 Stages 1-4 produce stable inputs. Stage 5 is where commercial iteration happens. Stages 6-7 finalize based on the selected scenario.
 
+### Non-Public / Commercial Pricing
+
+Many real RFP quotes depend on pricing that is NOT available through public APIs:
+
+| Type | Example | Handling |
+|------|---------|----------|
+| Enterprise discounts | AWS EDP, Azure EA | Manual entry in `working/05-commercial-overrides.md` |
+| Partner/reseller rates | Channel partner pricing | Manual entry with partner quote as evidence |
+| Implementation fees | Professional services, migration | Manual entry in pricing manifest |
+| Support plans | AWS Business/Enterprise Support | Lookup from knowledge base (public pricing) |
+| Tax / FX | Local tax rates, currency conversion | Manual entry per-country |
+| Data transfer | Cross-region, internet egress | Estimated from architecture, logged as assumption |
+
+Commercial overrides are stored in `working/05-commercial-overrides.md` with:
+- Override type, source (e.g., "partner quote from Acme Reseller"), date
+- Applied on top of public pricing in the scenario engine
+- Evidence: partner quote PDF/email in `evidence/pricing/commercial/`
+- Reviewer verifies commercial overrides have evidence before approval
+
 ---
 
 ## Python Tooling
@@ -302,12 +371,13 @@ Stages 1-4 produce stable inputs. Stage 5 is where commercial iteration happens.
 | `sync-db.py` | Parse knowledge/*.md → SQLite | Orchestrator (before pipeline), after any knowledge update |
 | `normalize.py` | Convert raw inputs to markdown | Orchestrator (Phase 2) |
 | `pricing-lookup.py` | Query pricing from SQLite | rfp-pricer |
-| `pricing-fetcher.py` | Fetch fresh pricing from APIs/calculators | Scheduled cron, rfp-pricer (on stale) |
+| `pricing-fetcher.py` | Fetch fresh pricing from APIs/calculators | Scheduled cron, pre-run readiness (NEVER mid-pipeline) |
 | `freshness.py` | Check entries against freshness_days | rfp-pricer, apv-reviewer |
 | `validate-gates.py` | Verify required artifacts exist for a stage | Orchestrator (before each stage) |
 | `validate-urls.py` | Check all source URLs are reachable | apv-reviewer |
 | `knowledge-promote.py` | Post-RFP: review gap log → suggest new pages | Orchestrator (post-pipeline) |
 | `knowledge-stats.py` | Report: coverage, staleness, gap trends | Manual / dashboard |
+| `knowledge-audit.py` | Audit knowledge files before import (PASS/STALE/FAIL) | Migration, periodic audit |
 
 ### Tool Contract
 
@@ -385,10 +455,10 @@ apv-projects/acme-corp--payment-gateway-singapore--2026-04-29/
 Each stage follows the same cycle:
 
 1. **Gate check**: `validate-gates.py --stage N` — halt if upstream artifacts missing
-2. **Knowledge load**: query SQLite + read relevant markdown, flag stale entries
+2. **Knowledge load**: query project-local snapshot SQLite (`working/apv-v2-snapshot.sqlite`), NOT the live knowledge DB
 3. **Execute**: skill reads inputs, reasons over knowledge, produces outputs
 4. **Emit & validate**: write artifacts, `validate-gates.py --verify N` — halt if emit incomplete
-5. **Gap log**: append any gaps or assumptions to `working/00-gap-log.md`
+5. **Gap log**: append any gaps or assumptions to `working/00-gap-log.md` (gaps fixed post-run, not mid-pipeline)
 
 Stage execution order: brainstorm → compliance → architecture → sizing → pricing (iterative) → response → review.
 
@@ -437,13 +507,27 @@ Halt, show error with suggestion for resolution.
 
 **Re-running a single stage**: gate check passes if upstream artifacts exist. Stage re-runs, overwrites its output. Orchestrator detects stale downstream artifacts and prompts re-run of affected stages.
 
-**Parallel RFPs**: each project is an independent folder. Knowledge base updates use file locking on SQLite. Second fetch for the same component sees fresh data and skips.
+**Parallel RFPs**: each project is an independent folder with its own knowledge snapshot SQLite. Parallel runs are fully isolated — one project's knowledge refresh cannot affect another project mid-run. Knowledge updates to the shared `knowledge/` surface only take effect in the next project that takes a fresh snapshot.
 
 **Multi-provider RFP**: brainstorm identifies multi-provider scope. Architecture produces variants per provider. Pricer queries all providers and produces comparison table.
 
 **Incomplete RFP**: Path C entry. Brainstorm asks clarifying questions interactively. Gap log will be larger. Reviewer flags higher assumption count.
 
-**Empty knowledge base (first run)**: pipeline runs with extensive gaps logged. First 3-5 RFPs rapidly populate the knowledge base. Alternatively, bulk import from V1 knowledge as bootstrap.
+**Empty knowledge base (first run)**: the system enforces a **minimum bootstrap threshold** before allowing a production RFP run. The orchestrator checks at pipeline start:
+
+| Domain | Minimum for Production Run |
+|--------|---------------------------|
+| Compliance | PCI-DSS overview + at least 1 target country's regulations |
+| Card Systems | At least the payment types relevant to the RFP |
+| Infrastructure | At least 1 cloud provider's core services |
+| Pricing | Component catalog for at least 1 provider, verified <30 days |
+| Sizing | TPS calculator methodology |
+
+If the threshold is not met, the orchestrator can:
+- **HALT**: refuse to run, list what's missing
+- **DRAFT mode**: run with explicit `mode: draft` flag — all outputs watermarked as draft, reviewer auto-rejects for production release
+
+Bulk import from V1 knowledge (via audit-first migration) is the recommended bootstrap path. The first 3-5 RFPs after bootstrap further strengthen coverage.
 
 ### Recovery Commands
 
@@ -484,7 +568,7 @@ wiki/apv-v2/
 apv-projects/[customer]--[title]--[date]/
 ├── README.md + SUMMARY.md
 ├── input/raw/ + normalized/
-├── working/           # Including 05-scenarios/ for pricing iteration
+├── working/           # Including 00-knowledge-snapshot.json, 00-gap-log.md, 05-scenarios/
 ├── outputs/01-07
 ├── evidence/pricing/ + compliance/ + source/
 ├── verification/
@@ -497,10 +581,10 @@ apv-projects/[customer]--[title]--[date]/
 
 Recommended build order:
 
-1. **Python tooling first**: `sync-db.py`, `validate-gates.py`, `normalize.py` — these are testable without AI
-2. **Knowledge bootstrap**: import V1 knowledge into V2 structure, run `sync-db.py`
-3. **rfp-brainstorm skill**: the interactive entry point — validates the skill format works
-4. **rfp-pricer skill**: the most complex skill (scenario engine) — validates SQLite integration
-5. **Remaining skills**: compliance, architect, calculator, generator, reviewer
-6. **Orchestrator**: sequences everything — build last because it depends on all stages
-7. **knowledge-promote.py**: the feedback loop — build after running a few real RFPs
+1. **Python tooling first**: `sync-db.py`, `validate-gates.py`, `normalize.py`, `knowledge-audit.py` — testable without AI
+2. **Knowledge bootstrap**: audit-first migration from V1, run `sync-db.py`
+3. **Simple end-to-end path**: build ALL 7 stage skills in basic form (no scenario engine yet) — prove ingest → brainstorm → compliance → architect → calculator → pricer (single scenario) → generator → reviewer works
+4. **Orchestrator**: sequences the proven stages with gate checks
+5. **Pricing scenario engine**: add `--budget`, `--compare`, `--select` to rfp-pricer after the basic path works
+6. **Commercial pricing**: add `working/05-commercial-overrides.md` support
+7. **Feedback loop**: `knowledge-promote.py`, `knowledge-stats.py` — build after running real RFPs
