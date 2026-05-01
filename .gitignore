@@ -1,0 +1,15 @@
+# Derived artifacts — always regenerable
+apv-v2.sqlite
+*.sqlite
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# IDE / tool
+.claude/
+.vscode/
+
+# Project runtime SQLite (regenerable)
+apv-projects/*/*.sqlite

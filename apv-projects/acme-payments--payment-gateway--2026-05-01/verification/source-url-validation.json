@@ -1,0 +1,218 @@
+{
+  "total_files": 7,
+  "total_urls": 30,
+  "valid": 30,
+  "invalid": 0,
+  "results": [
+    {
+      "url": "https://www.pcisecuritystandards.org/documents/PCI-DSS-v4_0.pdf",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/02-compliance.md",
+      "location": "body"
+    },
+    {
+      "url": "https://www.mas.gov.sg/-/media/MAS/Technology-Risk-Managment/TRM%20Guidelines%20-%20Final.pdf",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/02-compliance.md",
+      "location": "body"
+    },
+    {
+      "url": "https://sso.agc.gov.sg/Act/PDPA2012",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/02-compliance.md",
+      "location": "body"
+    },
+    {
+      "url": "https://sso.agc.gov.sg/Act/PSA2019",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/02-compliance.md",
+      "location": "body"
+    },
+    {
+      "url": "https://www.bnm.gov.my/documents/20124/101659/0e422cd7-7852-4c29-8229-c8cc7f1d9dca",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/02-compliance.md",
+      "location": "body"
+    },
+    {
+      "url": "https://www.pdp.gov.my/index.php/en/pdpa-2010",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/02-compliance.md",
+      "location": "body"
+    },
+    {
+      "url": "https://www.bnm.gov.my/payment-systems-act",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/02-compliance.md",
+      "location": "body"
+    },
+    {
+      "url": "https://www.bsp.gov.ph/Regulations/Issuances/Circulars/2020/c995.pdf",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/02-compliance.md",
+      "location": "body"
+    },
+    {
+      "url": "https://privacy.gov.ph/data-privacy-act/",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/02-compliance.md",
+      "location": "body"
+    },
+    {
+      "url": "https://www.bsp.gov.ph/Regulations/Issuances/Regulations/2018/Inst_1049.pdf",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/02-compliance.md",
+      "location": "body"
+    },
+    {
+      "url": "https://calculator.aws/",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/05-pricing.md",
+      "location": "body"
+    },
+    {
+      "url": "https://aws.amazon.com/ebs/pricing/",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/05-pricing.md",
+      "location": "body"
+    },
+    {
+      "url": "https://aws.amazon.com/eks/pricing/",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/05-pricing.md",
+      "location": "body"
+    },
+    {
+      "url": "https://aws.amazon.com/cloudhsm/pricing/",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/05-pricing.md",
+      "location": "body"
+    },
+    {
+      "url": "https://aws.amazon.com/elasticloadbalancing/pricing/",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/05-pricing.md",
+      "location": "body"
+    },
+    {
+      "url": "https://aws.amazon.com/directconnect/pricing/",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/05-pricing.md",
+      "location": "body"
+    },
+    {
+      "url": "https://aws.amazon.com/shield/pricing/",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/05-pricing.md",
+      "location": "body"
+    },
+    {
+      "url": "https://aws.amazon.com/kms/pricing/",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/05-pricing.md",
+      "location": "body"
+    },
+    {
+      "url": "https://aws.amazon.com/s3/pricing/",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/05-pricing.md",
+      "location": "body"
+    },
+    {
+      "url": "https://www.pcisecuritystandards.org/documents/PCI-DSS-v4_0.pdf",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/06-response.md",
+      "location": "body"
+    },
+    {
+      "url": "https://www.mas.gov.sg/-/media/MAS/Technology-Risk-Managment/TRM%20Guidelines%20-%20Final.pdf",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/06-response.md",
+      "location": "body"
+    },
+    {
+      "url": "https://sso.agc.gov.sg/Act/PDPA2012",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/06-response.md",
+      "location": "body"
+    },
+    {
+      "url": "https://sso.agc.gov.sg/Act/PSA2019",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/06-response.md",
+      "location": "body"
+    },
+    {
+      "url": "https://www.bnm.gov.my/documents/20124/101659/0e422cd7-7852-4c29-8229-c8cc7f1d9dca",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/06-response.md",
+      "location": "body"
+    },
+    {
+      "url": "https://www.pdp.gov.my/index.php/en/pdpa-2010",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/06-response.md",
+      "location": "body"
+    },
+    {
+      "url": "https://www.bnm.gov.my/payment-systems-act",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/06-response.md",
+      "location": "body"
+    },
+    {
+      "url": "https://www.bsp.gov.ph/Regulations/Issuances/Circulars/2020/c995.pdf",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/06-response.md",
+      "location": "body"
+    },
+    {
+      "url": "https://privacy.gov.ph/data-privacy-act/",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/06-response.md",
+      "location": "body"
+    },
+    {
+      "url": "https://www.bsp.gov.ph/Regulations/Issuances/Regulations/2018/Inst_1049.pdf",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/06-response.md",
+      "location": "body"
+    },
+    {
+      "url": "https://calculator.aws/",
+      "valid": true,
+      "issue": null,
+      "source_file": "apv-projects/acme-payments--payment-gateway--2026-05-01/outputs/06-response.md",
+      "location": "body"
+    }
+  ]
+}

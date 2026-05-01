@@ -1,0 +1,19 @@
+REQUEST FOR PROPOSAL
+Payment Gateway Infrastructure
+Client: ACME Payments Pte Ltd
+Date: 2026-04-15
+
+1. BACKGROUND
+ACME Payments requires a cloud-based payment gateway supporting
+Visa, Mastercard, and local payment methods in Singapore.
+
+2. REQUIREMENTS
+- 500 TPS peak processing capacity
+- PCI-DSS v4.0 Level 1 compliance
+- 99.99% availability SLA
+- Multi-AZ deployment in AWS Singapore
+
+3. VOLUME DATA
+- Monthly transactions: 50,000,000
+- Average transaction value: SGD 85
+- Peak multiplier: 3x during festive periods
