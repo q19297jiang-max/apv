@@ -27,6 +27,23 @@ class FileAudit:
     issues: list[str] = field(default_factory=list)
 
 
+def _should_audit(file_path: Path) -> bool:
+    name = file_path.name.lower()
+    if file_path.name.startswith("."):
+        return False
+    if "template" in name:
+        return False
+
+    try:
+        fm, _ = parse_file(file_path)
+    except Exception:
+        return True
+
+    if fm.get("category") == "documentation":
+        return False
+    return True
+
+
 def audit_file(file_path: Path) -> FileAudit:
     """Audit a single knowledge markdown file."""
     file_path = Path(file_path)
@@ -77,7 +94,7 @@ def audit_file(file_path: Path) -> FileAudit:
 def audit_directory(directory: Path) -> dict:
     """Audit all markdown files in a directory."""
     directory = Path(directory)
-    results = [audit_file(f) for f in sorted(directory.rglob("*.md")) if not f.name.startswith(".")]
+    results = [audit_file(f) for f in sorted(directory.rglob("*.md")) if _should_audit(f)]
     return {
         "total": len(results),
         "pass": sum(1 for r in results if r.status == AuditResult.PASS),

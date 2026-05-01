@@ -18,6 +18,35 @@ AWS pricing is a first-class project artifact set.
 
 APV V2 should not depend on undocumented calculator memory or hidden spreadsheet logic. It should store the pricing basis as markdown artifacts plus captured evidence.
 
+## Current Assurance Boundary (2026-05-01)
+
+Current APV V2 implementation provides three concrete controls:
+
+- freshness metadata on pricing knowledge pages
+- local validation of markdown structure and source URL format
+- project artifacts that disclose assumptions, estimates, and evidence paths
+
+Current APV V2 does not yet provide live AWS price verification from the calculator or API at run time. A fresh pricing page is therefore evidence of recent human verification, not a machine proof of present-time AWS correctness.
+
+## MCP Boundary
+
+MCP or web-reader tools may help an operator collect calculator evidence faster, but they are optional.
+
+- The pricing pipeline must remain operable with local markdown, local Python tooling, and manual browser-based calculator review.
+- Lack of MCP subscriptions must reduce convenience only; it must not block pricing freshness review or knowledge maintenance.
+- No pricing approval decision should rely on hidden MCP state. The only authoritative artifacts are the markdown catalog, evidence captures, freshness report, and project pricing outputs.
+
+## MCP-Free Refresh Fallback
+
+When no MCP-backed browser or collector is available, refresh AWS pricing using the following local workflow:
+
+1. Open `https://calculator.aws/` manually in a browser.
+2. Recreate the target region, service, and commitment inputs.
+3. Capture screenshots or exports into `evidence/pricing/aws/`.
+4. Update `knowledge/pricing/aws-component-catalog.md` with the verified values and verification date.
+5. Run local validation tooling: `tools/pricing_fetcher.py`, `tools/sync_db.py`, and `tools/freshness.py`.
+6. Regenerate or review downstream pricing artifacts before release.
+
 ## Artifact Types
 
 ### Reusable Pricing Knowledge

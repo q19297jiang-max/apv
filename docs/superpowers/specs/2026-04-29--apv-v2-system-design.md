@@ -16,6 +16,15 @@ APV V2 (AI-Powered RFP Velocity) automates payment-infrastructure RFP responses 
 
 Enhanced Claude Code Skills with Python tooling. Each pipeline stage is a Claude Code skill following Anthropic SKILL.md format. Deterministic work (parsing, pricing lookups, validation, freshness checks) is handled by Python scripts. SQLite provides a derived index over the markdown knowledge base for fast structured queries.
 
+## Current Implementation Boundary (2026-05-01)
+
+The architecture below remains the target model, but the current repository only partially implements it.
+
+- Core knowledge hygiene is enforced locally through markdown audits, freshness metadata checks, and a derived SQLite index.
+- AWS pricing freshness is currently metadata-based. The repo can prove that pricing pages are within their declared freshness window; it cannot yet prove live calculator correctness automatically.
+- MCP or web-reader tools are optional operator aids for research and evidence collection. They are not required runtime dependencies for the local pricing pipeline.
+- Snapshot and commercial override validation now exist as local gate checks in `validate-gates.py`, but snapshot creation and mandatory orchestrator wiring are still not fully enforced by the current Python tooling.
+
 ---
 
 ## System Architecture (3 Layers + Knowledge Maintenance)
@@ -132,7 +141,7 @@ DRAFT → ACTIVE → STALE → REFRESH → ACTIVE
 
 ### Three Refresh Mechanisms
 
-**Scheduled (proactive)**: monthly cron runs `pricing-fetcher.py --all-providers` and `freshness.py --report`. Handles pricing, the fastest-aging domain.
+**Scheduled (proactive)**: monthly review runs `pricing-fetcher.py` and `freshness.py` to identify stale pricing pages and generate a refresh plan. Manual calculator verification is still required before catalog values are updated.
 
 **Pre-run readiness check (reactive)**: before pipeline starts, orchestrator runs `freshness.py` against the snapshot. If critical knowledge is stale or missing, pipeline halts with a list of what needs refreshing. Human triggers fetchers, updates knowledge, and re-runs. **Knowledge is NEVER refreshed mid-pipeline** — this preserves reproducibility and auditability.
 
@@ -193,7 +202,7 @@ This ensures:
 | Source | Tool | Example |
 |--------|------|---------|
 | Official docs (manual) | Create .md from template | New PCI-DSS amendment |
-| API fetch (automated) | pricing-fetcher.py | Monthly AWS price update |
+| Manual or assisted refresh | pricing-fetcher.py + calculator workflow | Monthly AWS pricing review |
 | RFP feedback (post-run) | knowledge-promote.py | Gap found during project |
 | Industry update (manual) | Create .md from template | New country regulation |
 | Architecture learning | knowledge-promote.py | Reusable pattern from RFP |
@@ -404,10 +413,10 @@ Commercial overrides are stored in `working/05-commercial-overrides.md` with:
 | `sync-db.py` | Parse knowledge/*.md → SQLite | Orchestrator (before pipeline), after any knowledge update |
 | `normalize.py` | Convert raw inputs to markdown | Orchestrator (Phase 2) |
 | `pricing-lookup.py` | Query pricing from SQLite | rfp-pricer |
-| `pricing-fetcher.py` | Fetch fresh pricing from APIs/calculators | Scheduled cron, pre-run readiness (NEVER mid-pipeline) |
+| `pricing-fetcher.py` | Check pricing freshness and emit a manual refresh plan | Scheduled review, pre-run readiness |
 | `freshness.py` | Check entries against freshness_days | rfp-pricer, apv-reviewer |
 | `validate-gates.py` | Verify required artifacts exist for a stage | Orchestrator (before each stage) |
-| `validate-urls.py` | Check all source URLs are reachable | apv-reviewer |
+| `validate-urls.py` | Check source URL format in artifacts | apv-reviewer |
 | `knowledge-promote.py` | Post-RFP: review gap log → suggest new pages | Orchestrator (post-pipeline) |
 | `knowledge-stats.py` | Report: coverage, staleness, gap trends | Manual / dashboard |
 | `knowledge-audit.py` | Audit knowledge files before import (PASS/STALE/FAIL) | Migration, periodic audit |

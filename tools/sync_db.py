@@ -26,15 +26,27 @@ def _detect_domain(file_path: Path, knowledge_dir: Path, fm: dict) -> str:
     return "general"
 
 
+def _should_index(md_file: Path, fm: dict) -> bool:
+    name = md_file.name.lower()
+    if md_file.name.startswith("."):
+        return False
+    if "template" in name:
+        return False
+    if fm.get("category") == "documentation":
+        return False
+    return True
+
+
 def sync_knowledge(knowledge_dir: Path, db_path: Path) -> dict:
     knowledge_dir = Path(knowledge_dir)
     db_path = Path(db_path)
     conn = create_schema(db_path)
+    conn.execute("DELETE FROM knowledge_pages")
+    conn.commit()
 
     stats = {"total": 0, "indexed": 0, "warnings": 0, "errors": 0}
 
     for md_file in sorted(knowledge_dir.rglob("*.md")):
-        stats["total"] += 1
         try:
             text = md_file.read_text(encoding="utf-8")
             fm, body = {}, text
@@ -42,6 +54,11 @@ def sync_knowledge(knowledge_dir: Path, db_path: Path) -> dict:
                 fm, body = parse_file(md_file)
             except Exception:
                 pass
+
+            if not _should_index(md_file, fm):
+                continue
+
+            stats["total"] += 1
 
             if not fm:
                 stats["warnings"] += 1

@@ -1,6 +1,6 @@
 ---
-type: source
-category: pricing
+type: apv-meta
+category: documentation
 title: Pricing Workflow Guide
 created: 2026-04-25
 tags: [pricing, workflow, guide]
@@ -15,6 +15,9 @@ last_verified: null
 
 This workflow ensures accurate, up-to-date pricing for all cloud components (AWS, Azure, GCP) with minimal manual effort and maximum automation.
 
+> [!NOTE] Current V2 implementation boundary
+> `tools/pricing_fetcher.py` currently checks freshness metadata and prints a manual refresh plan. The V2 repo does not currently ship `pricing-verify.py`, `pricing-commit.py`, or a generic pricing fetcher that pulls live calculator values automatically.
+
 ## Architecture
 
 ```
@@ -27,26 +30,26 @@ This workflow ensures accurate, up-to-date pricing for all cloud components (AWS
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  pricing-fetcher.py (GENERIC)                                │
-│  - Dynamically parses any component catalog                  │
-│  - No hardcoded values                                      │
-│  - Works for AWS, Azure, GCP                                │
+│  pricing-fetcher.py (FRESHNESS + REFRESH PLAN)               │
+│  - Reads pricing page metadata                               │
+│  - Flags stale/expired pricing                               │
+│  - Generates manual calculator refresh steps                 │
 └─────────────────────────────────────────────────────────────┘
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  pricing-verify.py (VALIDATION)                             │
-│  - Detects discrepancies                                     │
-│  - Validates format compliance                               │
-│  - Opens calculator for verification                         │
+│  Local validation scripts                                    │
+│  - freshness.py checks freshness windows                     │
+│  - validate_urls.py checks URL format                        │
+│  - knowledge_audit.py checks markdown hygiene                │
 └─────────────────────────────────────────────────────────────┘
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────┐
-│  pricing-commit.py (COMMIT)                                  │
-│  - Pre-commit validation                                    │
-│  - Updates [provider].md                                     │
-│  - Creates evidence records                                 │
+│  Manual catalog update + sync_db.py                          │
+│  - Operator updates component catalog                        │
+│  - Evidence is stored alongside the update                   │
+│  - sync_db.py rebuilds the local index                       │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -86,13 +89,13 @@ PROVIDERS = {
 }
 ```
 
-### 3. No Script Changes Required
+### 3. Current Script Status
 
-The generic parser automatically:
-- Detects section headers
-- Identifies table columns dynamically
-- Extracts pricing data
-- Generates consistent output
+Current V2 behavior is simpler than the target workflow:
+- pricing catalogs are curated manually
+- `pricing_fetcher.py` checks freshness metadata only
+- `sync_db.py` rebuilds the local index after catalog updates
+- no generic live-pricing importer is currently implemented in `wiki/apv-v2/tools/`
 
 ## Quarterly Update Workflow
 
@@ -116,9 +119,9 @@ The generic parser automatically:
 ### Week 4: Regenerate Pricing Files
 ```bash
 # For each provider with updates:
-python pricing-fetcher.py --provider [provider]
-python pricing-verify.py --provider [provider]
-python pricing-commit.py --provider [provider]
+python tools/pricing_fetcher.py --knowledge-dir knowledge
+python tools/sync_db.py --knowledge-dir knowledge --db-path apv-v2.sqlite
+python tools/freshness.py --db apv-v2.sqlite --domain pricing --json
 ```
 
 ## Savings Plans Verification
@@ -172,13 +175,10 @@ Add to [provider]-component-catalog.md:
 | [instance-name] | [vcpu] | [memory] | $[ondemand-price] | $[savings-price] | $[monthly-cost] | [savings%] | https://calculator.aws/ |
 ```
 
-### Automatic Detection
+### Current V2 Handling
 
-The pricing-fetcher-generic.py script automatically detects and parses Savings Plans sections:
-- EC2 Savings Plans → `ec2_savings_plans` section
-- RDS Savings Plans → `rds_savings_plans` section
-- ElastiCache Savings Plans → `elasticache_savings_plans` section
-- Extensible for any future Savings Plans types
+Savings Plans sections are currently maintained as curated markdown in the pricing catalog.
+There is no implemented V2 parser that automatically imports Savings Plans data from calculator output.
 
 ### Common Mistakes
 

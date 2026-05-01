@@ -41,6 +41,26 @@ def test_sync_db_skips_non_markdown(tmp_path):
     assert stats["total"] == 1
 
 
+def test_sync_db_skips_hidden_templates_and_documentation(tmp_path):
+    knowledge_dir = tmp_path / "knowledge"
+    knowledge_dir.mkdir()
+    (knowledge_dir / ".template.md").write_text("---\ncategory: pricing\n---\n# Template\n")
+    (knowledge_dir / "component-catalog-template.md").write_text("---\ncategory: pricing\n---\n# Template\n")
+    (knowledge_dir / "workflow.md").write_text(
+        "---\ntype: apv-meta\ncategory: documentation\n---\n# Workflow\n"
+    )
+    (knowledge_dir / "real.md").write_text(
+        "---\ntype: source\ncategory: pricing\nsource_url: https://example.com\nlast_verified: 2026-04-30\nfreshness_days: 30\ncaptured_date: 2026-04-30\n---\n# Real\nBody text\n"
+    )
+
+    db_path = tmp_path / "test.sqlite"
+    from sync_db import sync_knowledge
+
+    stats = sync_knowledge(knowledge_dir, db_path)
+    assert stats["total"] == 1
+    assert stats["indexed"] == 1
+
+
 def test_sync_db_reports_missing_frontmatter(tmp_path):
     knowledge_dir = tmp_path / "knowledge"
     knowledge_dir.mkdir()

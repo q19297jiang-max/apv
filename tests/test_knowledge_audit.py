@@ -109,3 +109,39 @@ class TestAuditDirectory:
         assert summary["pass"] >= 1
         assert summary["fail"] >= 1
         assert len(summary["results"]) == 2
+
+    def test_audit_directory_skips_support_files(self, tmp_path):
+        _write(tmp_path, ".template.md", (
+            "---\n"
+            "type: source\n"
+            "category: pricing\n"
+            "source_url: {{SOURCE_URL}}\n"
+            "last_verified: {{YYYY-MM-DD}}\n"
+            "freshness_days: 30\n"
+            "captured_date: {{YYYY-MM-DD}}\n"
+            "---\n"
+            "Template body\n"
+        ))
+        _write(tmp_path, "workflow.md", (
+            "---\n"
+            "type: apv-meta\n"
+            "category: documentation\n"
+            "---\n"
+            "Documentation body\n"
+        ))
+        _write(tmp_path, "good.md", (
+            "---\n"
+            "type: knowledge\n"
+            "category: compute\n"
+            "source_url: https://example.com\n"
+            "last_verified: 2026-04-30\n"
+            "freshness_days: 90\n"
+            "captured_date: 2026-04-30\n"
+            "---\n"
+            "This is valid body content with enough characters.\n"
+        ))
+
+        summary = audit_directory(tmp_path)
+        assert summary["total"] == 1
+        assert summary["pass"] == 1
+        assert summary["fail"] == 0
