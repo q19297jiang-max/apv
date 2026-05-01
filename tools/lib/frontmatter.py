@@ -23,7 +23,7 @@ def _parse_value(raw: str):
     if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
         s = val[1:-1]
         if val[0] == '"':
-            s = s.replace('\\"', '"').replace("\\\\", "\\")
+            s = s.replace("\\\\", "\\").replace('\\"', '"')
         return s
     # Number
     try:
@@ -60,16 +60,15 @@ def _split_array(s: str) -> list[str]:
 
 def parse_frontmatter(text: str) -> tuple[dict, str]:
     """Parse YAML frontmatter from markdown text. Returns (frontmatter_dict, body)."""
-    if not text.startswith("---"):
+    m_open = re.match(r"---\r?\n", text)
+    if not m_open:
         return {}, text
     # Find closing ---
-    end = text.find("\n---", 3)
-    if end == -1:
+    m_close = re.search(r"\r?\n---\r?\n?", text[m_open.end():])
+    if not m_close:
         return {}, text
-    yaml_block = text[4:end]  # skip "---\n"
-    body = text[end + 4:]  # skip "\n---"
-    if body.startswith("\n"):
-        body = body[1:]
+    yaml_block = text[m_open.end():m_open.end() + m_close.start()]
+    body = text[m_open.end() + m_close.end():]
 
     fm = {}
     for line in yaml_block.split("\n"):

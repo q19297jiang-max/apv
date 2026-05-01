@@ -41,6 +41,7 @@ def test_parse_frontmatter_quoted_strings():
     text = '---\nsource_url: "https://example.com"\ntitle: "A \\"quoted\\" title"\n---\nBody'
     fm, body = parse_frontmatter(text)
     assert fm["source_url"] == "https://example.com"
+    assert fm["title"] == 'A "quoted" title'
 
 
 def test_parse_frontmatter_multiline_ignored():
