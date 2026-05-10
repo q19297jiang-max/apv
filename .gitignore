@@ -13,3 +13,8 @@ __pycache__/
 
 # Project runtime SQLite (regenerable)
 apv-projects/*/*.sqlite
+
+# Manual validation and local demo projects
+.tmp-manual-projects/
+apv-projects/demo--defaults-manual-check--*/
+apv-projects/demo--defaults-test-bin-apv-new-uses-repo-def0--*/

@@ -23,16 +23,20 @@ Emits:
 - `input/normalized/card-volume.md`
 - `input/normalized/requirements-summary.md`
 - `input/normalized/volume-summary.md`
+- `working/00-run-context.json`
 
 Required checks:
 - conversion completed
 - required normalized files present
+- run context initialized with the intended mode (`draft` by default, `submission` only with explicit operator intent)
 
 ## Stage 1: rfp-brainstorm
 
 Consumes:
 - `input/normalized/rfp.md`
 - `input/normalized/requirements-summary.md`
+- `working/00-run-context.json`
+- `input/normalized/sales-brief.md` (required when `run_mode = submission`)
 - relevant reusable knowledge pages
 
 Emits:
@@ -43,6 +47,8 @@ Emits:
 Required checks:
 - knowledge gaps clearly listed
 - target regions/type/provider assumptions visible
+- submission mode must block if approved sales intent is missing
+- draft mode must remain visibly draft-only even when downstream work proceeds
 
 ## Stage 2: rfp-compliance
 
@@ -126,6 +132,7 @@ Emits:
 Required checks:
 - final response does not introduce unsupported claims
 - major claims traceable back to stage outputs
+- response artifacts should preserve governance metadata such as `run_mode` and `release_eligible`
 
 ## Stage 7: apv-reviewer
 
@@ -145,9 +152,13 @@ Required checks:
 - freshness compliance
 - evidence completeness
 - conditional/reject items clearly listed
+- release eligibility requires both an acceptable quality outcome and `run_mode = submission`
+- draft mode never becomes release-eligible regardless of quality outcome
 
 ## Global Contract Rules
 
 - A stage may not emit final output unless required upstream artifacts exist.
 - Missing data must be recorded in gap or assumption artifacts, not silently ignored.
 - All stage outputs must remain valid markdown project artifacts suitable for git review.
+- A submission-candidate run may not proceed through stage 1 without approved sales intent.
+- Promotion from `draft` to `submission` is a separate workflow that updates run context and may require rerunning the affected stage chain.
