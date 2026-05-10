@@ -82,6 +82,7 @@ Examples:
 - `input/normalized/card-volume.md`
 - `input/normalized/requirements-summary.md`
 - `input/normalized/volume-summary.md`
+- `input/normalized/sales-brief.md`
 
 ### Working Artifacts
 
@@ -89,6 +90,7 @@ Purpose:
 - capture grounded intermediate outputs between stages
 
 Examples:
+- `working/00-run-context.json`
 - `working/01-brainstorm-context.md`
 - `working/02-compliance-map.md`
 - `working/03-architecture-decision-log.md`
@@ -97,10 +99,29 @@ Examples:
 - `working/05-assumption-log.md`
 - `working/05-gap-log.md`
 
+### Run Context Artifacts
+
+Purpose:
+- capture machine-readable governance state for a specific project run
+
+Examples:
+- `working/00-run-context.json`
+
+Typical fields:
+- `mode`
+- `promotion_state`
+- `sales_brief_present`
+- `sales_brief_approved`
+- `release_eligible`
+- `current_blocker`
+- `promotion_path`
+- `promotion_attestation`
+
 ### Stage Output Artifacts
 
 Purpose:
 - store the primary user-facing result of each stage
+- surface run-level metadata such as whether the output is draft-only or release-eligible
 
 Examples:
 - `outputs/01-brainstorm.md`
@@ -145,6 +166,7 @@ Examples:
 ## Naming Rules
 
 - Use two-digit numeric prefixes for ordered stage files.
+- Use `00-` prefixes for pre-stage governance and boundary artifacts.
 - Use lowercase kebab-case for non-stage artifacts.
 - Include dates in evidence captures where freshness matters.
 - Use `summary`, `record`, `manifest`, `map`, `log`, and `decision` suffixes consistently.
@@ -152,3 +174,10 @@ Examples:
 ## Promotion Rule
 
 If a project artifact becomes reusable beyond one RFP, promote it into `wiki/apv-v2/knowledge/` as a curated knowledge page rather than leaving it buried only inside a project folder.
+
+When a project transitions from `draft` to `submission`, the governance artifacts become part of the runtime boundary for that run:
+
+- `working/00-run-context.json`
+- `input/normalized/sales-brief.md`
+
+Promotion may also require rerunning downstream stages if the new sales intent materially changes strategy.
