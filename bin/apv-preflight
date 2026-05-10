@@ -1,0 +1,335 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "${script_dir}/.." && pwd)"
+
+python_cmd=""
+search_root="${repo_root}"
+while [[ "${search_root}" != "/" ]]; do
+  candidate="${search_root}/.venv/bin/python"
+  if [[ -x "${candidate}" ]]; then
+    python_cmd="${candidate}"
+    break
+  fi
+  search_root="$(dirname "${search_root}")"
+done
+
+if [[ -z "${python_cmd}" ]]; then
+  if command -v python3 >/dev/null 2>&1; then
+    python_cmd="$(command -v python3)"
+  else
+    echo "python3 is required to run APV preflight." >&2
+    exit 1
+  fi
+fi
+
+usage() {
+  cat <<'EOF'
+Usage: ./bin/apv-preflight --project PATH [options]
+
+Run APV V2 production-candidate preflight checks for an existing project.
+
+Options:
+  --project PATH          Project directory to validate
+  --skip-tests            Skip the full repo pytest suite
+  --stage-range A:B       Validate stage gates from A through B (default: 1:7)
+  --json                  Output structured JSON instead of human-readable progress
+  -h, --help              Show this help message
+EOF
+}
+
+project=""
+skip_tests=0
+stage_range="1:7"
+json_output=0
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --project)
+      project="$2"
+      shift 2
+      ;;
+    --skip-tests)
+      skip_tests=1
+      shift
+      ;;
+    --stage-range)
+      stage_range="$2"
+      shift 2
+      ;;
+    --json)
+      json_output=1
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+done
+
+if [[ -z "${project}" ]]; then
+  echo "--project is required." >&2
+  usage >&2
+  exit 2
+fi
+
+if [[ ! -d "${project}" ]]; then
+  echo "Project directory not found: ${project}" >&2
+  exit 2
+fi
+
+if [[ ! "${stage_range}" =~ ^[0-7]:[0-7]$ ]]; then
+  echo "--stage-range must use A:B with stages between 0 and 7." >&2
+  exit 2
+fi
+
+start_stage="${stage_range%%:*}"
+end_stage="${stage_range##*:}"
+
+if (( start_stage > end_stage )); then
+  echo "--stage-range start must be less than or equal to end." >&2
+  exit 2
+fi
+
+repo_test_status="skipped"
+snapshot_status="not-run"
+overall_status=0
+snapshot_json='{}'
+stage_json_payloads=()
+remediation_hints=()
+
+canonicalize_json() {
+  local payload="$1"
+  PAYLOAD="${payload}" "${python_cmd}" - <<'PY'
+import json
+import os
+
+print(json.dumps(json.loads(os.environ["PAYLOAD"])))
+PY
+}
+
+print_snapshot_hint() {
+  local hint="Run ./bin/apv dry-run --project ${project} --knowledge-dir ${repo_root}/knowledge before preflight so snapshot boundary artifacts exist."
+  if (( json_output == 0 )); then
+    printf 'Hint: %s\n' "${hint}" >&2
+  fi
+  remediation_hints+=("${hint}")
+}
+
+contains_missing_snapshot_artifacts() {
+  local payload="$1"
+  PAYLOAD="${payload}" "${python_cmd}" - <<'PY'
+import json
+import os
+payload = json.loads(os.environ["PAYLOAD"])
+missing = set(payload.get("missing", []))
+required = {
+    "working/00-knowledge-snapshot.json",
+    "working/apv-v2-snapshot.sqlite",
+}
+raise SystemExit(0 if required & missing else 1)
+PY
+}
+
+print_gate_output() {
+  local payload="$1"
+  PAYLOAD="${payload}" "${python_cmd}" - <<'PY'
+import json
+import os
+
+result = json.loads(os.environ["PAYLOAD"])
+status = "PASS ✓" if result.get("pass") else "FAIL ✗"
+print(f"Stage {result['stage']}: {status}")
+if result.get("missing"):
+    print("Missing:")
+    for item in result["missing"]:
+        print(f"  - {item}")
+if result.get("present"):
+    print("Present:")
+    for item in result["present"]:
+        print(f"  - {item}")
+if result.get("issues"):
+    print("Issues:")
+    for item in result["issues"]:
+        print(f"  - {item}")
+PY
+}
+
+run_repo_tests() {
+  if (( skip_tests == 1 )); then
+    repo_test_status="skipped"
+    return 0
+  fi
+
+  if (( json_output == 0 )); then
+    printf '\n==> Repo test suite\n'
+  fi
+
+  if "${python_cmd}" -m pytest -q "${repo_root}"; then
+    repo_test_status="passed"
+    return 0
+  fi
+
+  repo_test_status="failed"
+  overall_status=1
+  return 1
+}
+
+run_gate_check() {
+  local label="$1"
+  local stage="$2"
+  shift 2
+
+  local payload
+  if ! payload="$(${python_cmd} "${repo_root}/tools/validate_gates.py" --project "${project}" --stage "${stage}" --json "$@")"; then
+    :
+  fi
+  payload="$(canonicalize_json "${payload}")"
+
+  if (( json_output == 0 )); then
+    printf '\n==> %s\n' "${label}"
+    print_gate_output "${payload}"
+  fi
+
+  if [[ "${stage}" == "0" ]]; then
+    snapshot_json="${payload}"
+    if PAYLOAD="${payload}" "${python_cmd}" - <<'PY'
+import json
+import os
+raise SystemExit(0 if json.loads(os.environ["PAYLOAD"]).get("pass") else 1)
+PY
+    then
+      snapshot_status="passed"
+    else
+      snapshot_status="failed"
+      overall_status=1
+      if contains_missing_snapshot_artifacts "${payload}"; then
+        print_snapshot_hint
+      fi
+      return 1
+    fi
+  else
+    stage_json_payloads+=("${payload}")
+    if ! PAYLOAD="${payload}" "${python_cmd}" - <<'PY'
+import json
+import os
+raise SystemExit(0 if json.loads(os.environ["PAYLOAD"]).get("pass") else 1)
+PY
+    then
+      overall_status=1
+      return 1
+    fi
+  fi
+}
+
+run_stage_7_release_check() {
+  local payload
+  payload="$(
+    APV_PREFLIGHT_REPO_ROOT="${repo_root}" \
+    APV_PREFLIGHT_PROJECT="${project}" \
+    "${python_cmd}" - <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
+
+repo_root = Path(os.environ["APV_PREFLIGHT_REPO_ROOT"])
+project = Path(os.environ["APV_PREFLIGHT_PROJECT"])
+sys.path.insert(0, str(repo_root / "tools"))
+
+from apv import validate_release_readiness
+
+print(json.dumps(validate_release_readiness(project)))
+PY
+  )"
+  payload="$(canonicalize_json "${payload}")"
+
+  if (( json_output == 0 )); then
+    printf '\n==> Stage 7 gate\n'
+    print_gate_output "${payload}"
+  fi
+
+  stage_json_payloads+=("${payload}")
+  if ! PAYLOAD="${payload}" "${python_cmd}" - <<'PY'
+import json
+import os
+raise SystemExit(0 if json.loads(os.environ["PAYLOAD"]).get("pass") else 1)
+PY
+  then
+    overall_status=1
+    return 1
+  fi
+}
+
+run_repo_tests || true
+
+if (( overall_status == 0 )); then
+  run_gate_check "Snapshot boundary" 0 --check-snapshot || true
+fi
+
+if (( overall_status == 0 )); then
+  for (( stage=start_stage; stage<=end_stage; stage++ )); do
+    if (( stage == 7 )); then
+      run_stage_7_release_check || break
+    elif (( stage == 5 )); then
+      run_gate_check "Stage ${stage} gate" "${stage}" --check-commercial-overrides || break
+    else
+      run_gate_check "Stage ${stage} gate" "${stage}" || break
+    fi
+  done
+fi
+
+if (( json_output == 1 )); then
+  stage_json_blob=""
+  if (( ${#stage_json_payloads[@]} > 0 )); then
+    stage_json_blob="$(printf '%s\n' "${stage_json_payloads[@]}")"
+  fi
+
+  hint_blob=""
+  if (( ${#remediation_hints[@]} > 0 )); then
+    hint_blob="$(printf '%s\n' "${remediation_hints[@]}")"
+  fi
+
+  export APV_PREFLIGHT_PROJECT="${project}"
+  export APV_PREFLIGHT_REPO_ROOT="${repo_root}"
+  export APV_PREFLIGHT_SKIP_TESTS="${skip_tests}"
+  export APV_PREFLIGHT_REPO_TEST_STATUS="${repo_test_status}"
+  export APV_PREFLIGHT_SNAPSHOT_STATUS="${snapshot_status}"
+  export APV_PREFLIGHT_SNAPSHOT_JSON="${snapshot_json}"
+  export APV_PREFLIGHT_STAGE_JSONS="${stage_json_blob}"
+  export APV_PREFLIGHT_HINTS="${hint_blob}"
+  export APV_PREFLIGHT_OVERALL_STATUS="${overall_status}"
+  "${python_cmd}" - <<'PY'
+import json
+import os
+
+stage_jsons = [line for line in os.environ.get("APV_PREFLIGHT_STAGE_JSONS", "").splitlines() if line.strip()]
+hints = [line for line in os.environ.get("APV_PREFLIGHT_HINTS", "").splitlines() if line.strip()]
+payload = {
+    "project": os.environ["APV_PREFLIGHT_PROJECT"],
+    "repo_root": os.environ["APV_PREFLIGHT_REPO_ROOT"],
+    "repo_tests": {
+        "status": os.environ["APV_PREFLIGHT_REPO_TEST_STATUS"],
+        "skipped": os.environ["APV_PREFLIGHT_SKIP_TESTS"] == "1",
+    },
+    "snapshot": json.loads(os.environ.get("APV_PREFLIGHT_SNAPSHOT_JSON", "{}") or "{}"),
+    "stages": [json.loads(item) for item in stage_jsons],
+    "remediation_hints": hints,
+    "pass": os.environ["APV_PREFLIGHT_OVERALL_STATUS"] == "0",
+}
+print(json.dumps(payload, indent=2))
+PY
+else
+  if (( overall_status == 0 )); then
+    printf '\nAPV preflight passed for %s\n' "${project}"
+  fi
+fi
+
+exit "${overall_status}"
