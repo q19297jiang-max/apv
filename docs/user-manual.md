@@ -16,6 +16,8 @@ tags:
 
 This manual is for anyone using APV V2 to respond to RFPs — primarily **sales team members** and **solution architects**. No engineering background is required to follow the core workflow. Technical sections are clearly marked.
 
+If you are maintaining shared AWS pricing knowledge rather than running a sales workflow, use `docs/pricing-operator-cheat-sheet.md` for the shortest operator path and `knowledge/pricing/pricing-workflow.md` for the full operator playbook.
+
 ---
 
 ## Table of Contents
@@ -85,15 +87,34 @@ wiki/apv-v2/apv-projects/acme-payments--payment-gateway--2026-05-01/
 
 Type this command to the AI assistant:
 ```
-apv new [customer-name] [short-title]
+./bin/apv new [customer-name] [short-title] --raw-dir [folder-with-rfp-files]
 ```
 
 Example:
 ```
-apv new "dbs-bank" "card-issuing-platform"
+./bin/apv new "dbs-bank" "card-issuing-platform" --raw-dir raw/bbc-bank-rfp/
 ```
 
-The system creates the project folder and begins the pipeline automatically.
+The command creates the project folder under `apv-projects/`, copies files from the raw source folder, normalizes them, prepares the knowledge snapshot, and makes the project ready for stage execution.
+
+### Choosing Your Run Mode
+
+APV V2 supports two explicit run modes:
+
+- **Draft mode** — internal exploration mode. Use this when you are still learning the deal, generating an internal first pass, or collecting missing context. Draft runs can produce a full artifact chain, but they are **never release-eligible**.
+- **Submission mode** — governed delivery mode. Use this when the opportunity is live, the deal owner is assigned, and the sales strategy has been approved. Submission runs may become release-eligible if verification and approval pass.
+
+New projects default to **draft** mode.
+
+To choose a mode explicitly:
+
+```bash
+./bin/apv new [customer-name] [short-title] --raw-dir [folder-with-rfp-files] --mode draft
+```
+
+```bash
+./bin/apv new [customer-name] [short-title] --raw-dir [folder-with-rfp-files] --mode submission
+```
 
 ---
 
@@ -103,19 +124,33 @@ The system creates the project folder and begins the pipeline automatically.
 
 Tell the AI:
 ```
-apv new [customer] [title]
+./bin/apv new [customer] [title] --raw-dir [folder-with-rfp-files]
 ```
 
-This creates the project folder with all required subfolders.
+This creates the project folder, copies the raw files into `input/raw/`, and prepares the normalized inputs automatically.
 
-### Step 2 — Add the RFP Document
+### Step 1a — Decide Whether This Is Draft Or Submission Work
 
-Drop the customer's RFP file into:
+Use **draft** mode when:
+- you are still exploring the customer request
+- the deal is not yet ready for formal submission
+- you want fast internal output without asserting release authority
+
+Use **submission** mode when:
+- the opportunity is active and owned
+- the win strategy is known
+- constraints are approved and documented
+
+If a project starts in draft mode and later becomes real submission work, do not patch artifacts manually. Promote it using the dedicated workflow described later in this manual.
+
+### Step 2 — Verify the Imported RFP Files
+
+The raw files you passed via `--raw-dir` are copied into:
 ```
 input/raw/
 ```
 
-Any format works. You can add multiple documents (e.g., RFP + technical questionnaire + volume spreadsheet).
+Any format works. You can include multiple documents in the source folder, such as the RFP, technical questionnaire, and volume spreadsheet.
 
 ### Step 3 — Normalize the Inputs (Automatic)
 
@@ -141,6 +176,21 @@ At Stage 1 (Brainstorm), the AI will ask you for strategic direction. This is yo
 - **Questions**: What don't you know yet about the customer's needs?
 
 See [Section 4](#4-how-to-guide-the-ai-sales-context) for more guidance on this step.
+
+### Step 4a — Add A Sales Brief For Submission Mode
+
+Submission mode requires a lightweight sales brief. The default artifact is:
+
+```text
+input/normalized/sales-brief.md
+```
+
+At minimum it should include:
+- **Deal Owner**
+- **Win Strategy**
+- **Constraints**
+- **Approved By**
+- **Approved Date**
 
 ### Step 5 — Pipeline Runs Automatically (Stages 1–6)
 
@@ -205,6 +255,32 @@ The AI will generate a synthetic requirements summary and flag that no source do
 
 After Stage 1, check `outputs/01-brainstorm.md` — the AI generates a list of **Clarification Questions** you can send back to the customer to strengthen the response. These are pre-built and ready to use.
 
+### Promoting A Draft Project To Submission Mode
+
+When a draft project becomes a real submission candidate, use:
+
+```bash
+./bin/apv promote-to-submission --project apv-projects/[customer]--[title]--[date] --owner "[deal-owner]" --strategy "[win-strategy]" --constraint "[constraint]"
+```
+
+This command:
+- creates or updates `input/normalized/sales-brief.md`
+- updates `working/00-run-context.json`
+- changes the project mode from `draft` to `submission`
+
+There are two promotion paths:
+
+- **Full rerun** (default) — use this when the new sales intent changes strategy, priorities, or constraints enough that Stage 1 should be rerun.
+- **Fast-track** — use this only when the strategy is already aligned and you can provide explicit attestation text.
+
+Fast-track example:
+
+```bash
+./bin/apv promote-to-submission --project apv-projects/[customer]--[title]--[date] --owner "[deal-owner]" --strategy "[win-strategy]" --constraint "[constraint]" --fast-track-attestation "Strategy unchanged from draft review; aligned for submission."
+```
+
+If you use the default promotion path, APV will require a rerun from **Stage 1** before downstream submission work is considered valid.
+
 ---
 
 ## 5. Reviewing and Revising Outputs
@@ -244,6 +320,183 @@ Example — re-run from architecture:
 ```
 apv resume apv-projects/dbs-bank--card-issuing--2026-05-01 --from-stage 3
 ```
+
+### Updating Pricing Without Editing Files
+
+If Stage 5 is missing a component, a price is stale, or you need a new AWS item for the deal, do not edit pricing markdown manually. Use the pricing commands below, then re-run from Stage 5 if needed.
+
+If someone points at a generated pricing file such as `knowledge/pricing/aws-component-catalog.md`, `knowledge/pricing/aws.md`, or `knowledge/pricing/aws-component-catalog.report.json` and asks for a change, start with the routing command first. It tells you whether the file is generated and which source-of-truth workflow owns it.
+
+The generated AWS pricing files now include a `3-Year Upfront Projection` column for every row.
+This is a normalized 36-month estimate, not a claim that AWS offers an actual 3-year commitment model for every service.
+APV calculates it as:
+- hourly rows: `730 hours/month x 36 months`
+- other unit-priced rows: the same billing unit repeated across `36 monthly periods`
+
+The catalog also shows a `Verification Mode` column. Read it literally:
+- `public-offer` means the row is backed by supported live public-offer validation, typically against AWS Calculator or AWS public offer data for the supported services
+- `formula` means the row is derived from an established calculator-backed baseline or multiplier, not independently live-queried for every row
+- `official-page` means the row comes from an AWS pricing page rather than calculator-backed live validation
+
+This means APV tracks how each price was verified, but not every AWS row is automatically live-validated by AWS Calculator.
+
+#### Most Common Pricing Tasks
+
+| Situation | What to Run |
+|----------|-------------|
+| Someone asks to change a generated pricing KB file directly | `./bin/apv knowledge route-change --knowledge-dir knowledge --target [generated-file-path]` |
+| Refresh the existing AWS pricing knowledge | `./bin/apv refresh-pricing --provider aws --knowledge-dir knowledge --sync --check-freshness` |
+| Add one EC2, RDS, or CloudHSM item | `./bin/apv pricing add-item --provider aws --service [service] --instance-type [type] --knowledge-dir knowledge --refresh --sync --check-freshness` |
+| Add a whole EC2 or RDS family | `./bin/apv pricing extend-family --provider aws --service [service] --family [family] --knowledge-dir knowledge --refresh --sync --check-freshness` |
+| Add one Redis or ElastiCache node type | `./bin/apv pricing add-item --provider aws --service redis --component [cache-node-type] --unit-price [price] --knowledge-dir knowledge --refresh --sync --check-freshness` |
+| Add one known single-row static AWS service such as ALB, S3, GuardDuty, WAF, KMS, Route 53, Shield Advanced, Secrets Manager, SNS, SQS, ECR, or API Gateway | `./bin/apv pricing add-item --provider aws --service [service] --unit-price [price] --knowledge-dir knowledge --refresh --sync --check-freshness` |
+| Add one known multi-component static AWS row such as CloudWatch logs, Route 53 DNS queries, or NAT Gateway data processing | `./bin/apv pricing add-item --provider aws --service [service] --component [component] --unit-price [price] --knowledge-dir knowledge --refresh --sync --check-freshness` |
+
+#### New Function: Route a Generated Knowledge File Back to the Real Workflow
+
+Use this when the starting point is a generated file path rather than a pricing requirement.
+
+In plain English, this command does two jobs at once:
+- it acts as a guardrail by blocking direct edits to generated pricing artifacts
+- it acts as a router by telling you which source-of-truth workflow really owns that file
+
+Example:
+
+```bash
+./bin/apv knowledge route-change --knowledge-dir knowledge --target knowledge/pricing/aws-component-catalog.md
+```
+
+What it does:
+- inspects the target file you passed in
+- checks the file metadata and APV's known generated-file routes
+- blocks direct editing if the file is a generated pricing artifact
+- shows the real source of truth, which is usually `knowledge/pricing/aws-pricing-manifest.json`
+- shows the regeneration command to use after changing the source of truth
+
+What a normal result means:
+- `Direct edit blocked for generated knowledge file.` means the file is generated and you should not edit it
+- `Source of truth: ...` tells you which manifest or workflow owns the file
+- `Regenerate with: ...` tells you which command to run after updating the source of truth
+
+Why this exists:
+- generated files such as `knowledge/pricing/aws-component-catalog.md`, `knowledge/pricing/aws.md`, and `knowledge/pricing/aws-component-catalog.report.json` are outputs, not authoritative inputs
+- direct edits would be overwritten the next time pricing is refreshed
+- direct edits also break traceability because the real pricing logic lives in the manifest and generator workflow
+
+Typical flow:
+1. Run `knowledge route-change` on the generated file path.
+2. Update the source-of-truth workflow it points to, usually with `pricing add-item`, `pricing extend-family`, or `refresh-pricing`.
+3. Re-run Stage 5 for your project if the shared pricing change affects the response.
+
+Wrong vs right example:
+- Wrong: edit `knowledge/pricing/aws.md` because an ALB price looks wrong.
+- Right: run `knowledge route-change` on `knowledge/pricing/aws.md`, update the source workflow it points to, regenerate pricing, then re-run Stage 5 if needed.
+
+Pricing verification example:
+- An EC2 on-demand row may show `public-offer`, which means APV can validate it through the supported live pricing path.
+- A Savings Plans row may show `formula`, which means APV derived it from a validated discount pattern rather than live-querying each Savings Plans row individually.
+- An ALB or S3 row may show `official-page`, which means APV uses the AWS pricing page as the source instead of calculator-backed validation.
+
+#### Friendly Service Names You Can Use
+
+You do not need to remember the internal AWS service names exactly. The CLI accepts friendly names and normalizes them automatically.
+
+| You Can Type | The System Uses |
+|-------------|-----------------|
+| `postgres`, `postgresql`, `postgresql/rds` | `RDS` |
+| `redis`, `elasticache` | `ElastiCache` |
+| `alb` | `ALB` |
+| `nlb` | `NLB` |
+| `route53` | `Route 53` |
+| `shield-advanced`, `shield` | `Shield Advanced` |
+| `cloudwatch` | `CloudWatch` |
+| `nat-gateway` | `NAT Gateway` |
+| `secrets-manager` | `Secrets Manager` |
+| `sns` | `SNS` |
+| `sqs` | `SQS` |
+| `ecr` | `ECR` |
+| `api-gateway` | `API Gateway` |
+| `security-hub` | `Security Hub` |
+| `private-ca` | `ACM Private CA` |
+
+#### Copy-and-Use Examples
+
+Add one PostgreSQL RDS item:
+
+```bash
+./bin/apv pricing add-item --provider aws --service postgresql/rds --instance-type db.m6i.xlarge --knowledge-dir knowledge --refresh --sync --check-freshness
+```
+
+Add one Redis pricing row:
+
+```bash
+./bin/apv pricing add-item --provider aws --service redis --component cache.m7g.large --unit-price 0.312 --knowledge-dir knowledge --refresh --sync --check-freshness
+```
+
+Add one ALB row with inferred defaults:
+
+```bash
+./bin/apv pricing add-item --provider aws --service alb --unit-price 0.0225 --knowledge-dir knowledge --refresh --sync --check-freshness
+```
+
+Add one GuardDuty row with inferred defaults:
+
+```bash
+./bin/apv pricing add-item --provider aws --service guardduty --unit-price 4.0 --knowledge-dir knowledge --refresh --sync --check-freshness
+```
+
+Add one Route 53 hosted-zone row with inferred defaults:
+
+```bash
+./bin/apv pricing add-item --provider aws --service route53 --unit-price 0.5 --knowledge-dir knowledge --refresh --sync --check-freshness
+```
+
+Add one CloudWatch logs-ingest row using a controlled component alias:
+
+```bash
+./bin/apv pricing add-item --provider aws --service cloudwatch --component logs-ingest --unit-price 0.5 --knowledge-dir knowledge --refresh --sync --check-freshness
+```
+
+Add one NAT Gateway data-processing row using a controlled component alias:
+
+```bash
+./bin/apv pricing add-item --provider aws --service nat-gateway --component data-processing --unit-price 0.045 --knowledge-dir knowledge --refresh --sync --check-freshness
+```
+
+Extend an RDS family:
+
+```bash
+./bin/apv pricing extend-family --provider aws --service postgres --family m6i --knowledge-dir knowledge --refresh --sync --check-freshness
+```
+
+Refresh pricing only:
+
+```bash
+./bin/apv refresh-pricing --provider aws --knowledge-dir knowledge --sync --check-freshness
+```
+
+Check whether a generated pricing file should be changed indirectly:
+
+```bash
+./bin/apv knowledge route-change --knowledge-dir knowledge --target knowledge/pricing/aws.md
+```
+
+After pricing changes, if your project already exists, re-run the pricing stage:
+
+```bash
+apv resume [project-path] --from-stage 5
+```
+
+#### Simple Rule for Sales Users
+
+- Use `refresh-pricing` when the prices are stale but the component list is unchanged.
+- Use `knowledge route-change` when the request starts from a generated pricing file path.
+- Use `pricing add-item` when one component is missing.
+- Use `pricing extend-family` when you need several sizes from the same EC2 or RDS family.
+- After refresh, review the generated `3-Year Upfront Projection` column when you need a 36-month comparison for the decision maker.
+- For single-row static services, `--service` plus `--unit-price` is enough.
+- For componentized static services, add a controlled `--component`, such as `dns-queries`, `logs-archive`, `custom-metrics`, `standard-alarm`, or `data-processing`.
+- Never edit `knowledge/pricing/aws-component-catalog.md` or `knowledge/pricing/aws.md` directly.
 
 ---
 
@@ -328,6 +581,21 @@ The AI will revise the architecture with trade-offs documented in the ADRs.
 
 Stage 7 is an automatic quality gate. It checks the response before handing it to you.
 
+### Quality Is Not The Same As Release Authority
+
+Stage 7 answers a **quality** question: is the output approved, conditional, or rejected?
+
+Release authority is a separate **governance** question:
+
+- Is the project in `submission` mode?
+- Does it have approved sales intent?
+
+This means a draft project can still produce a strong Stage 7 result, but remain **non-release-eligible**.
+
+Check both:
+- `outputs/07-approval.md` for quality status
+- `approvals/release-decision.md` and `working/00-run-context.json` for final release eligibility context
+
 ### Three Possible Decisions
 
 #### ✅ APPROVED
@@ -385,6 +653,15 @@ apv resume [project-path] --from-stage 5
 apv resume [project-path] --from-stage [N]
 ```
 
+### Project Is Approved But Still Not Releaseable
+
+**What it means**: The quality gate passed, but the project is still in draft mode or missing approved submission authority.
+
+**How to fix**:
+- confirm whether the project should remain internal-only
+- if it should be released, run `promote-to-submission`
+- rerun the required stage chain if the promotion path requires Stage 1 regeneration
+
 ### Stale Knowledge Warning
 
 **What it means**: A knowledge page (pricing or compliance) has not been verified within its freshness window.
@@ -417,6 +694,20 @@ apv resume [project-path] --from-stage [N]
 If you find an error, correct the sizing (Stage 4) or architecture (Stage 3) and re-run:
 ```
 apv resume [project-path] --from-stage 4
+```
+
+If the issue is not sizing but missing or stale AWS pricing knowledge:
+
+```bash
+./bin/apv refresh-pricing --provider aws --knowledge-dir knowledge --sync --check-freshness
+apv resume [project-path] --from-stage 5
+```
+
+If one AWS item is missing, add it first, then re-run pricing:
+
+```bash
+./bin/apv pricing add-item --provider aws --service postgresql/rds --instance-type db.m6i.xlarge --knowledge-dir knowledge --refresh --sync --check-freshness
+apv resume [project-path] --from-stage 5
 ```
 
 > ⚠️ **Never manually edit the pricing files.** Always re-run the appropriate stage. Manual edits create untraceable changes and break the audit trail.
@@ -467,7 +758,8 @@ apv-projects/[customer]--[title]--[date]/
 │   └── normalized/           ← auto-generated markdown versions
 │       ├── rfp.md
 │       ├── requirements-summary.md
-│       └── volume-summary.md
+│       ├── volume-summary.md
+│       └── sales-brief.md     ← submission-mode sales intent artifact
 │
 ├── outputs/                  ← STAGE OUTPUTS (what you review)
 │   ├── 01-brainstorm.md
@@ -479,6 +771,7 @@ apv-projects/[customer]--[title]--[date]/
 │   └── 07-approval.md        ← APPROVAL DECISION
 │
 ├── working/                  ← INTERNAL ARTIFACTS (audit trail)
+│   ├── 00-run-context.json   ← run mode, promotion state, release eligibility
 │   ├── 00-gap-log.md         ← running list of knowledge gaps
 │   ├── 01-brainstorm-context.md
 │   ├── 02-compliance-map.md
@@ -519,9 +812,27 @@ wiki/apv-v2/knowledge/
 
 | Command | What It Does |
 |---------|-------------|
-| `apv new [customer] [title]` | Start a new RFP project |
+| `apv new [customer] [title] [--mode draft|submission]` | Start a new RFP project in the chosen run mode |
+| `apv promote-to-submission --project [path] --owner ... --strategy ... --constraint ...` | Promote a draft project into governed submission mode |
 | `apv resume [path] --from-stage N` | Re-run pipeline from a specific stage |
 | `apv dry-run [path]` | Check knowledge readiness without running stages |
+| `./bin/apv knowledge route-change --knowledge-dir knowledge --target [path]` | Check whether a knowledge file is generated and route the change back to its source-of-truth workflow |
+| `./bin/apv refresh-pricing --provider aws --knowledge-dir knowledge --sync --check-freshness` | Refresh the shared AWS pricing knowledge and rebuild validation state |
+| `./bin/apv pricing add-item ...` | Add one supported AWS pricing item, refresh the KB, and keep pricing markdown generated |
+| `./bin/apv pricing extend-family ...` | Add a whole EC2 or RDS family into the shared AWS pricing knowledge |
+
+### Pricing Command Examples
+
+| Task | Example |
+|------|---------|
+| Add one EC2 item | `./bin/apv pricing add-item --provider aws --service EC2 --instance-type m6i.xlarge --knowledge-dir knowledge --refresh --sync --check-freshness` |
+| Add one RDS item with friendly alias | `./bin/apv pricing add-item --provider aws --service postgresql/rds --instance-type db.m6i.xlarge --knowledge-dir knowledge --refresh --sync --check-freshness` |
+| Add one Redis row with friendly alias | `./bin/apv pricing add-item --provider aws --service redis --component cache.m7g.large --unit-price 0.312 --knowledge-dir knowledge --refresh --sync --check-freshness` |
+| Add one ALB row with inferred defaults | `./bin/apv pricing add-item --provider aws --service alb --unit-price 0.0225 --knowledge-dir knowledge --refresh --sync --check-freshness` |
+| Add one GuardDuty row with inferred defaults | `./bin/apv pricing add-item --provider aws --service guardduty --unit-price 4.0 --knowledge-dir knowledge --refresh --sync --check-freshness` |
+| Extend a family | `./bin/apv pricing extend-family --provider aws --service postgres --family m6i --knowledge-dir knowledge --refresh --sync --check-freshness` |
+| Route a generated pricing file back to the owning workflow | `./bin/apv knowledge route-change --knowledge-dir knowledge --target knowledge/pricing/aws-component-catalog.md` |
+| Refresh only | `./bin/apv refresh-pricing --provider aws --knowledge-dir knowledge --sync --check-freshness` |
 
 ### Stage Numbers for Resume
 
@@ -539,13 +850,19 @@ wiki/apv-v2/knowledge/
 
 ## Quick Reference Card (For Sales)
 
+Need the operator version instead? Use `docs/pricing-operator-cheat-sheet.md`.
+
 **Starting a project:**
 1. Get the RFP document
-2. `apv new [customer] [title]`
+2. `apv new [customer] [title] [--mode draft|submission]`
 3. Drop RFP into `input/raw/`
 4. Provide sales context when Stage 1 asks
 5. Wait for pipeline to complete
 6. Review `outputs/06-response.md`
+
+**If a draft becomes a real submission:**
+- run `./bin/apv promote-to-submission --project [path] --owner ... --strategy ... --constraint ...`
+- rerun from Stage 1 unless you intentionally use a fast-track attestation path
 
 **Changing something:**
 - Architecture → `apv resume [path] --from-stage 3`
@@ -553,9 +870,26 @@ wiki/apv-v2/knowledge/
 - Pricing → `apv resume [path] --from-stage 5`
 - Final doc only → `apv resume [path] --from-stage 6`
 
+**Pricing fixes:**
+- Someone asked to change `knowledge/pricing/aws-component-catalog.md` or `aws.md` directly → `./bin/apv knowledge route-change --knowledge-dir knowledge --target [file]`
+- Prices stale but component list unchanged → `./bin/apv refresh-pricing --provider aws --knowledge-dir knowledge --sync --check-freshness`
+- One AWS item missing → `./bin/apv pricing add-item ... --refresh --sync --check-freshness`
+- Several EC2 or RDS sizes missing → `./bin/apv pricing extend-family ... --refresh --sync --check-freshness`
+- After any shared pricing change → `apv resume [path] --from-stage 5`
+
+**Friendly service names:**
+- `postgresql/rds` = `RDS`
+- `redis` = `ElastiCache`
+- `alb` = `ALB`
+- `private-ca` = `ACM Private CA`
+
 **Approval outcomes:**
 - ✅ APPROVED → ready to send
 - ⚠️ CONDITIONAL → fix listed issues, re-run
 - ❌ REJECTED → check `outputs/07-approval.md` for what to fix
+
+**Governance reminder:**
+- draft mode can still produce approved quality artifacts
+- only submission mode can become release-eligible
 
 **Your final deliverable:** `outputs/06-response.md`
